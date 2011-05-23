@@ -86,3 +86,4 @@
 
 /** Site main menu **/
 .block_site_main_menu .footer select {font-size: 0.8em;}
+.path-calendar.dir-rtl .minicalendarblock h3 {text-align: center;}

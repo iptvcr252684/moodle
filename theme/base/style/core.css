@@ -192,6 +192,7 @@ a.skip:active {position: static;display: block;}
 .mform .fitem .fitemtitle {width:15%;text-align:right;float:left;}
 .mform .fitem .fitemtitle div {display: inline;}
 .mform .fitem .felement {border-width: 0;width:80%;margin-left:16%;}
+.dir-rtl .mform .fitem .felement {border-width: 0;width:80%;margin-left:0%; margin-right: 16%;}
 .mform .fitem fieldset.felement {margin-left:0;padding-left:1%;}
 .mform .error,
 .mform .required {color:#A00;}
@@ -209,6 +210,9 @@ a.skip:active {position: static;display: block;}
 .mform fieldset.fdate_selector label {display:inline;float: none;width: auto;}
 .mform .ftags label.accesshide {display: block;position: static;}
 .mform .ftags select {margin-bottom: 0.7em;min-width: 22em;}
+.mform .ftext.error input {background-color: yellow;}
+.mform .ftext span.error {display: inline-block;}
+.dir-rtl .mform .fitem .felement.fstatic {margin-left: 0%;margin-right: 16%;}
 
 input#id_externalurl {direction:ltr;}
 
@@ -727,7 +731,7 @@ body.tag .managelink {padding: 5px;}
 .dir-rtl .mod-indent-15,
 .dir-rtl .mod-indent-huge {margin-right:300px;margin-left:0px;}
 
-.dir-rtl .felement.feditor select {margin-right:18.75%;}
+/*.dir-rtl .felement.feditor select {margin-right:18.75%;}*/
 
 /* Resourcelib mp3 player size: only width could be changed here, height hardcoded in JS */
 .resourcecontent .resourcemediaplugin_mp3 object {height:25px; width: 600px}

@@ -29,8 +29,10 @@
 .path-calendar .maincalendar .controls {width:98%;margin:10px auto;}
 .path-calendar .maincalendar .eventlist .event {width:100%;margin-bottom:10px;border-spacing:0px;border-collapse:separate;border-width:1px;border-style:solid;}
 .path-calendar .maincalendar .eventlist .event .topic .name {float:left;}
+.path-calendar.dir-rtl .maincalendar .eventlist .event .topic .name {float:right;}
 .path-calendar .maincalendar .eventlist .event .topic .date {float:right;}
 .path-calendar .maincalendar .eventlist .event .course {float:left;clear:left;}
+.path-calendar.dir-rtl .maincalendar .eventlist .event .course {float:right;clear:right;}
 .path-calendar .maincalendar .eventlist .event .side {width:32px;}
 .path-calendar .maincalendar .header {overflow:hidden;}
 .path-calendar .maincalendar .header .buttons {float: right;}

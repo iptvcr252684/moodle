@@ -41,9 +41,10 @@ div.editq div.question div.content .singlequestion a .questiontext{text-decorati
 #page-mod-quiz-mod #reviewoptionshdr fieldset.fgroup span label,
 #adminquizreviewoptions span label {margin-left: 0.4em;}
 
-table#categoryquestions td,
-#page-mod-quiz-edit table#categoryquestions th{overflow:hidden;white-space:nowrap;}
-
+table#categoryquestions td, #page-mod-quiz-edit table#categoryquestions th{overflow:hidden;white-space:nowrap;}
+#page-question-edit.dir-rtl table#categoryquestions td.creatorname,
+#page-question-edit.dir-rtl table#categoryquestions td.modifiername {text-align: center;}
+#page-question-edit.dir-rtl #categoryquestions .questionname {width: 30%;}
 /** mod quiz mod **/
 #page-mod-quiz-mod #reviewoptionshdr .fitem {width: 30%;margin-left: 10px;}
 #page-mod-quiz-mod #reviewoptionshdr fieldset.fgroup {width: 100%;text-align: left;margin-left: 0;}
@@ -376,3 +377,5 @@ bank window's title is prominent enough*/
 .ie6#page-mod-quiz-edit div.question div.content .questionname {width:20%;}
 .ie6#page-mod-quiz-edit .editq div.question div.content .randomquestioncategory a{width:40%;}
 .ie6#page-mod-quiz-edit .reorder .questioncontentcontainer .randomquestioncategory label{width: 35%;}
+
+#page-question-type-calculated input[name*="answer"],#page-question-type-calculatedmulti input[name*="answer"] {direction:ltr;}

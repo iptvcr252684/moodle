@@ -16,7 +16,8 @@ td.grade div.overridden {background-color: #DDDDDD;}
 .path-grade-report-grader table#user-grades td.cell span.gradefail {background-color: #EBC4BD;}
 .path-grade-report-grader table#user-grades td.clickable {cursor: pointer;}
 .path-grade-report-grader .graderreportoverlay {background-color:#EEEEEE;border:1px solid black;padding:10px;}
-
+.dir-rtl table#user-grades td.useridnumber, .dir-rtl table#user-grades th, .path-grade-report-grader.dir-rtl div.gradeparent,
+.path-grade-report-grader.dir-rtl .ie6 form, .dir-rtl table#user-grades td.ajax {text-align:right;}
 .path-grade-edit-tree .moving {background-color: #E8EEF7;}
 .path-grade-edit-tree .gradetreebox {width:70%;padding-bottom:15px;}
 

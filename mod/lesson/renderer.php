@@ -283,7 +283,11 @@ class mod_lesson_renderer extends plugin_renderer_base {
 
             $cell = new html_table_cell();
             $cell->colspan = 2;
-            $cell->style = 'text-align:left';
+            if (right_to_left()){ // it would be better if it was handled in CSS (nadavkav)
+                $cell->style = 'text-align:right;';
+            } else {
+                $cell->style = 'text-align:left;';
+            }
             $cell->text = $page->contents;
             $pagetable->data[] = new html_table_row(array($cell));
 

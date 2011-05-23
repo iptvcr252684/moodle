@@ -120,7 +120,7 @@
 /*all courses view*/
 #page-course-index .categorylist .course.clearfloat { height: auto; }
 
-/** 
+/**
 * Overide for RTL layout
 */
 .dir-rtl .coursebox .info {float: right; text-align: right;}
@@ -141,3 +141,4 @@
 
 #page-course-index.dir-rtl .category .image {padding-left: 5px; padding-right: 0px;}
 #page-course-index.dir-rtl .indentation {padding-left: 0px;padding-right: 30px;}
+.dir-rtl #filemenu .yuimenuitemlabel, .yuimenubaritemlabel {text-align: right;}
