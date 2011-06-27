@@ -26,11 +26,21 @@
     margin-bottom: 10px;
 }
 
+.path-mod-workshop.dir-rtl .submission-summary {margin: 10px;}
+
+.path-mod-workshop .submission-summary
 .path-mod-workshop .submission-summary .title,
 .path-mod-workshop .submission-summary .author,
 .path-mod-workshop .submission-summary .author .fullname,
 .path-mod-workshop .submission-summary .author .picture {
     display: inline;
+}
+
+.path-mod-workshop.dir-rtl .submission-summary .title,
+.path-mod-workshop.dir-rtl .submission-summary .author,
+.path-mod-workshop.dir-rtl .submission-summary .author .fullname,
+.path-mod-workshop.dir-rtl .submission-summary .author .picture {
+    display: inline-block;
 }
 
 .path-mod-workshop .submission-summary .title,
