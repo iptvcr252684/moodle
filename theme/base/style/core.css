@@ -820,3 +820,7 @@ ul li,
 ol li,
 .course-content ul.weeks .content .summary ol li,
 .course-content ul.topics .content .summary ol li {list-style: decimal outside none;}
+
+.dir-rtl #adminsettings #id_s__pathtodu,
+.dir-rtl #adminsettings #id_s__aspellpath,
+.dir-rtl #adminsettings #id_s__pathtodot {direction: ltr;}
