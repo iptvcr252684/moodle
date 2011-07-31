@@ -824,3 +824,6 @@ ol li,
 .dir-rtl #adminsettings #id_s__pathtodu,
 .dir-rtl #adminsettings #id_s__aspellpath,
 .dir-rtl #adminsettings #id_s__pathtodot {direction: ltr;}
+
+.dir-rtl #adminsettings #id_s__supportemail,
+.dir-rtl #adminsettings #id_s__supportpage {direction: ltr;}
