@@ -856,3 +856,6 @@ ol li,
 .dir-rtl #adminsettings #id_s__sitepolicy,
 .dir-rtl #adminsettings #id_s__sitepolicyguest,
 .dir-rtl #adminsettings #id_s__cronremotepassword {direction: ltr;}
+
+.dir-rtl #adminsettings #id_s__allowedip,
+.dir-rtl #adminsettings #id_s__blockedip {direction: ltr;}
