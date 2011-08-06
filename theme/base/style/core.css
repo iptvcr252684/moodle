@@ -836,3 +836,8 @@ ol li,
 .dir-rtl #adminsettings #id_s__proxyuser,
 .dir-rtl #adminsettings #id_s__proxypassword,
 .dir-rtl #adminsettings #id_s__proxybypass {direction: ltr;}
+
+.dir-rtl #adminsettings #id_s__jabberhost,
+.dir-rtl #adminsettings #id_s__jabberserver,
+.dir-rtl #adminsettings #id_s__jabberusername,
+.dir-rtl #adminsettings #id_s__jabberpassword {direction: ltr;}
