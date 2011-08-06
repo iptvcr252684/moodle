@@ -870,3 +870,7 @@ ol li,
 
 .dir-rtl #adminsettings #id_s_enrol_paypal_paypalbusiness {direction: ltr;}
 
+
+.dir-rtl #adminsettings #id_s_enrol_flatfile_location,
+#page-admin-setting-enrolsettingsflatfile.dir-rtl input[type=text] {direction: ltr;}
+#page-admin-setting-enrolsettingsflatfile.dir-rtl .informationbox {direction: ltr;text-align: left;}
