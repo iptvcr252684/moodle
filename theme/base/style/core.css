@@ -847,3 +847,5 @@ ol li,
 .dir-rtl #adminsettings #id_s__additionalhtmlfooter {direction: ltr;}
 
 .dir-rtl #adminsettings #id_s__docroot {direction: ltr;}
+
+.dir-rtl #adminsettings #admin-emoticons .form-text {direction: ltr;}
