@@ -852,3 +852,7 @@ ol li,
 
 .dir-rtl #adminsettings #id_s__pathtoclam,
 .dir-rtl #adminsettings #id_s__quarantinedir {direction: ltr;}
+
+.dir-rtl #adminsettings #id_s__sitepolicy,
+.dir-rtl #adminsettings #id_s__sitepolicyguest,
+.dir-rtl #adminsettings #id_s__cronremotepassword {direction: ltr;}
