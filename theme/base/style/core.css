@@ -841,3 +841,7 @@ ol li,
 .dir-rtl #adminsettings #id_s__jabberserver,
 .dir-rtl #adminsettings #id_s__jabberusername,
 .dir-rtl #adminsettings #id_s__jabberpassword {direction: ltr;}
+
+.dir-rtl #adminsettings #id_s__additionalhtmlhead,
+.dir-rtl #adminsettings #id_s__additionalhtmltopofbody,
+.dir-rtl #adminsettings #id_s__additionalhtmlfooter {direction: ltr;}
