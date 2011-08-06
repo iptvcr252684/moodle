@@ -875,3 +875,5 @@ ol li,
 #page-admin-setting-enrolsettingsflatfile.dir-rtl .informationbox {direction: ltr;text-align: left;}
 
 #page-admin-setting-enrolsettingsdatabase.dir-rtl input[type=text] {direction: ltr;}
+
+#page-admin-auth-db.dir-rtl input[type=text] {direction: ltr;}
