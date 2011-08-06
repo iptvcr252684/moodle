@@ -867,3 +867,6 @@ ol li,
 .dir-rtl #adminsettings #id_s_enrol_ldap_bind_dn,
 .dir-rtl #adminsettings #id_s_enrol_ldap_bind_pw,
 .dir-rtl #adminsettings #admin-role_mapping input[type=text] {direction: ltr;}
+
+.dir-rtl #adminsettings #id_s_enrol_paypal_paypalbusiness {direction: ltr;}
+
