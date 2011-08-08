@@ -420,3 +420,5 @@
 .path-mod-workshop div.buttonwithhelp div {
     display: inline;
 }
+
+.path-mod-workshop.dir-rtl .userplan {width: 100%;font-size: 100%;}
