@@ -879,3 +879,10 @@ ol li,
 #page-admin-auth-db.dir-rtl input[type=text] {direction: ltr;}
 
 #page-admin-grade-edit-scale-edit.dir-rtl .error input#id_name {margin-right: 170px;}
+
+.dir-rtl #adminsettings #id_s__filter_tex_latexpreamble,
+.dir-rtl #adminsettings #id_s__filter_tex_latexbackground,
+.dir-rtl #adminsettings #id_s__filter_tex_pathlatex,
+.dir-rtl #adminsettings #id_s__filter_tex_pathdvips,
+.dir-rtl #adminsettings #id_s__filter_tex_pathconvert,
+.dir-rtl #adminsettings #id_s__blockedip {direction: ltr;}
