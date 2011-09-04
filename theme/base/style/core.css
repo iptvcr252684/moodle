@@ -652,6 +652,7 @@ body.tag .managelink {padding: 5px;}
 #page-enrol-users .enrol_user_buttons .enrolusersbutton div,
 #page-enrol-users .enrol_user_buttons .enrolusersbutton form {display:inline;}
 #page-enrol-users .enrol_user_buttons .enrolusersbutton input {padding-left:6px;padding-right:6px;}
+#page-enrol-users.dir-rtl .col_userdetails .subfield_picture {float: right;}
 
 /**
 * Overide for RTL layout
