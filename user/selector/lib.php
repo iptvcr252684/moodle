@@ -353,12 +353,14 @@ abstract class user_selector_base {
      */
     protected function load_selected_users() {
         // See if we got anything.
-        $userids = optional_param($this->name, array(), PARAM_INTEGER);
-        if (empty($userids)) {
-            return array();
-        }
-        if (!$this->multiselect) {
-            $userids = array($userids);
+        if ($this->multiselect) {
+            $userids = optional_param_array($this->name, array(), PARAM_INTEGER);
+        } else {
+            $userid = optional_param($this->name, 0, PARAM_INTEGER);
+            if (empty($userid)) {
+                return array();
+            }
+            $userids = array($userid);
         }
 
         // If we did, use the find_users method to validate the ids.

@@ -3506,9 +3506,9 @@ class admin_setting_emoticons extends admin_setting {
             $emoticon                   = new stdClass();
             $emoticon->text             = clean_param(trim($form['text'.$i]), PARAM_NOTAGS);
             $emoticon->imagename        = clean_param(trim($form['imagename'.$i]), PARAM_PATH);
-            $emoticon->imagecomponent   = clean_param(trim($form['imagecomponent'.$i]), PARAM_SAFEDIR);
+            $emoticon->imagecomponent   = clean_param(trim($form['imagecomponent'.$i]), PARAM_COMPONENT);
             $emoticon->altidentifier    = clean_param(trim($form['altidentifier'.$i]), PARAM_STRINGID);
-            $emoticon->altcomponent     = clean_param(trim($form['altcomponent'.$i]), PARAM_SAFEDIR);
+            $emoticon->altcomponent     = clean_param(trim($form['altcomponent'.$i]), PARAM_COMPONENT);
 
             if (strpos($emoticon->text, ':/') !== false or strpos($emoticon->text, '//') !== false) {
                 // prevent from breaking http://url.addresses by accident
@@ -4172,7 +4172,7 @@ class admin_setting_configcheckbox_with_lock extends admin_setting_configcheckbo
             $checkboxparams['checked'] = 'checked';
         }
 
-        $lockcheckboxparams = array('type'=>'checkbox', 'id'=>$id.'_locked','name'=>$fullname.'[locked]', 'value'=>1, 'class'=>'form-checkbox');
+        $lockcheckboxparams = array('type'=>'checkbox', 'id'=>$id.'_locked','name'=>$fullname.'[locked]', 'value'=>1, 'class'=>'form-checkbox locked-checkbox');
         if (!empty($data['locked'])) { // convert to strings before comparison
             $lockcheckboxparams['checked'] = 'checked';
         }
@@ -6259,7 +6259,7 @@ function db_replace($search, $replace) {
     // TODO: this is horrible hack, we should do whitelisting and each plugin should be responsible for proper replacing...
     $skiptables = array('config', 'config_plugins', 'config_log', 'upgrade_log',
                         'filter_config', 'sessions', 'events_queue', 'repository_instance_config',
-                        'block_instances', 'block_pinned_old', 'block_instance_old', '');
+                        'block_instances', '');
 
     // Turn off time limits, sometimes upgrades can be slow.
     @set_time_limit(0);
@@ -7059,10 +7059,25 @@ class admin_setting_webservicesoverview extends admin_setting {
         global $CFG, $OUTPUT;
 
         $return = "";
-
-        /// One system controlling Moodle with Token
         $brtag = html_writer::empty_tag('br');
 
+        // Enable mobile web service
+        $enablemobile = new admin_setting_enablemobileservice('enablemobilewebservice',
+                get_string('enablemobilewebservice', 'admin'),
+                get_string('configenablemobilewebservice',
+                        'admin', ''), 0); //we don't want to display it but to know the ws mobile status
+        $manageserviceurl = new moodle_url("/admin/settings.php?section=externalservices");
+        $wsmobileparam = new stdClass();
+        $wsmobileparam->enablemobileservice = get_string('enablemobilewebservice', 'admin');
+        $wsmobileparam->manageservicelink = html_writer::link($manageserviceurl,
+                get_string('externalservices', 'webservice'));
+        $mobilestatus = $enablemobile->get_setting()?get_string('mobilewsenabled', 'webservice'):get_string('mobilewsdisabled', 'webservice');
+        $wsmobileparam->wsmobilestatus = html_writer::tag('strong', $mobilestatus);
+        $return .= $OUTPUT->heading(get_string('enablemobilewebservice', 'admin'), 3, 'main');
+        $return .= $brtag . get_string('enablemobilewsoverview', 'webservice', $wsmobileparam)
+                . $brtag . $brtag;
+
+        /// One system controlling Moodle with Token
         $return .= $OUTPUT->heading(get_string('onesystemcontrolling', 'webservice'), 3, 'main');
         $table = new html_table();
         $table->head = array(get_string('step', 'webservice'), get_string('status'),

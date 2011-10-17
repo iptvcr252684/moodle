@@ -340,6 +340,43 @@ abstract class moodleform {
     }
 
     /**
+     * Internal method. Validates filepicker and filemanager files if they are
+     * set as required fields. Also, sets the error message if encountered one.
+     *
+     * @return bool/array with errors
+     */
+    protected function validate_draft_files() {
+        global $USER;
+        $mform =& $this->_form;
+
+        $errors = array();
+        //Go through all the required elements and make sure you hit filepicker or
+        //filemanager element.
+        foreach ($mform->_rules as $elementname => $rules) {
+            $elementtype = $mform->getElementType($elementname);
+            //If element is of type filepicker then do validation
+            if (($elementtype == 'filepicker') || ($elementtype == 'filemanager')){
+                //Check if rule defined is required rule
+                foreach ($rules as $rule) {
+                    if ($rule['type'] == 'required') {
+                        $draftid = (int)$mform->getSubmitValue($elementname);
+                        $fs = get_file_storage();
+                        $context = get_context_instance(CONTEXT_USER, $USER->id);
+                        if (!$files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, 'id DESC', false)) {
+                            $errors[$elementname] = $rule['message'];
+                        }
+                    }
+                }
+            }
+        }
+        if (empty($errors)) {
+            return true;
+        } else {
+            return $errors;
+        }
+    }
+
+    /**
      * Load in existing data as form defaults. Usually new entry defaults are stored directly in
      * form definition (new entry form); this function is used to load in data where values
      * already exist and data is being edited (edit entry form).
@@ -439,6 +476,16 @@ abstract class moodleform {
 
             $files = array();
             $file_val = $this->_validate_files($files);
+            //check draft files for validation and flag them if required files
+            //are not in draft area.
+            $draftfilevalue = $this->validate_draft_files();
+
+            if ($file_val !== true && $draftfilevalue !== true) {
+                $file_val = array_merge($file_val, $draftfilevalue);
+            } else if ($draftfilevalue !== true) {
+                $file_val = $draftfilevalue;
+            } //default is file_val, so no need to assign.
+
             if ($file_val !== true) {
                 if (!empty($file_val)) {
                     foreach ($file_val as $element=>$msg) {
@@ -652,7 +699,7 @@ abstract class moodleform {
         if (!$this->get_new_filename($elname)) {
             return false;
         }
-        if (!$dir = make_upload_directory('temp/forms')) {
+        if (!$dir = make_temp_directory('forms')) {
             return false;
         }
         if (!$tempfile = tempnam($dir, 'tempup_')) {
@@ -1384,9 +1431,14 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
         } else {
             foreach ($submission as $key=>$s) {
                 if (array_key_exists($key, $this->_types)) {
-                    $submission[$key] = clean_param($s, $this->_types[$key]);
+                    $type = $this->_types[$key];
                 } else {
-                    $submission[$key] = clean_param($s, PARAM_RAW);
+                    $type = PARAM_RAW;
+                }
+                if (is_array($s)) {
+                    $submission[$key] = clean_param_array($s, $type, true);
+                } else {
+                    $submission[$key] = clean_param($s, $type);
                 }
             }
             $this->_submitValues = $submission;
@@ -1705,8 +1757,16 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
                             }
                         }
                     }
+                    //for editor element, [text] is appended to the name.
+                    if ($element->getType() == 'editor') {
+                        $elementName .= '[text]';
+                        //Add format to rule as moodleform check which format is supported by browser
+                        //it is not set anywhere... So small hack to make sure we pass it down to quickform
+                        if (is_null($rule['format'])) {
+                            $rule['format'] = $element->getFormat();
+                        }
+                    }
                     // Fix for bug displaying errors for elements in a group
-                    //$test[$elementName][] = $registry->getValidationScript($element, $elementName, $rule);
                     $test[$elementName][0][] = $registry->getValidationScript($element, $elementName, $rule);
                     $test[$elementName][1]=$element;
                     //end of fix
@@ -2287,7 +2347,7 @@ class MoodleQuickForm_Renderer extends HTML_QuickForm_Renderer_Tableless{
         if (!$form->isFrozen()) {
             $args = $form->getLockOptionObject();
             if (count($args[1]) > 0) {
-                $PAGE->requires->js_init_call('M.form.initFormDependencies', $args, false, moodleform::get_js_module());
+                $PAGE->requires->js_init_call('M.form.initFormDependencies', $args, true, moodleform::get_js_module());
             }
         }
     }
@@ -2389,17 +2449,18 @@ class MoodleQuickForm_Rule_Required extends HTML_QuickForm_Rule {
     /**
      * This function returns Javascript code used to build client-side validation.
      * It checks if an element is not empty.
-     * Note, that QuickForm does not know how to work with editor text field and builds not correct
-     * JS code for validation. If client check is enabled for editor field it will not be validated
-     * on client side no matter what this function returns.
      *
-     * @param     mixed     $options    Not used yet
+     * @param int $format
      * @return array
      */
-    function getValidationScript($options = null) {
+    function getValidationScript($format = null) {
         global $CFG;
         if (!empty($CFG->strictformsrequired)) {
-            return array('', "{jsVar}.replace(/^\s+$/g, '') == ''");
+            if (!empty($format) && $format == FORMAT_HTML) {
+                return array('', "{jsVar}.replace(/(<[^img|hr|canvas]+>)|&nbsp;|\s+/ig, '') == ''");
+            } else {
+                return array('', "{jsVar}.replace(/^\s+$/g, '') == ''");
+            }
         } else {
             return array('', "{jsVar} == ''");
         }

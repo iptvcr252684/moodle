@@ -135,6 +135,7 @@ if (!empty($add)) {
     $data->completionview     = $cm->completionview;
     $data->completionexpected = $cm->completionexpected;
     $data->completionusegrade = is_null($cm->completiongradeitemnumber) ? 0 : 1;
+    $data->showdescription    = $cm->showdescription;
     if (!empty($CFG->enableavailability)) {
         $data->availablefrom      = $cm->availablefrom;
         $data->availableuntil     = $cm->availableuntil;
@@ -247,7 +248,7 @@ if ($mform->is_cancelled()) {
     }
 
     $fromform->course = $course->id;
-    $fromform->modulename = clean_param($fromform->modulename, PARAM_SAFEDIR);  // For safety
+    $fromform->modulename = clean_param($fromform->modulename, PARAM_PLUGIN);  // For safety
 
     $addinstancefunction    = $fromform->modulename."_add_instance";
     $updateinstancefunction = $fromform->modulename."_update_instance";
@@ -310,6 +311,11 @@ if ($mform->is_cancelled()) {
             $cm->showavailability          = $fromform->showavailability;
             condition_info::update_cm_from_form($cm,$fromform,true);
         }
+        if (isset($fromform->showdescription)) {
+            $cm->showdescription = $fromform->showdescription;
+        } else {
+            $cm->showdescription = 0;
+        }
 
         $DB->update_record('course_modules', $cm);
 
@@ -336,7 +342,7 @@ if ($mform->is_cancelled()) {
             set_coursemodule_idnumber($fromform->coursemodule, $fromform->cmidnumber);
         }
 
-        // Now that module is fully updated, also update completion data if 
+        // Now that module is fully updated, also update completion data if
         // required (this will wipe all user completion data and recalculate it)
         if ($completion->is_enabled() && !empty($fromform->completionunlocked)) {
             $completion->reset_all_state($cm);
@@ -394,6 +400,11 @@ if ($mform->is_cancelled()) {
                     $newcm->availableuntil);
             }
             $newcm->showavailability          = $fromform->showavailability;
+        }
+        if (isset($fromform->showdescription)) {
+            $newcm->showdescription = $fromform->showdescription;
+        } else {
+            $newcm->showdescription = 0;
         }
 
         if (!$fromform->coursemodule = add_course_module($newcm)) {

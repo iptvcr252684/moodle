@@ -588,18 +588,27 @@ function file_get_drafarea_files($draftitemid, $filepath = '/') {
  * @return integer the itemid, or 0 if there is not one yet.
  */
 function file_get_submitted_draft_itemid($elname) {
-    $param = optional_param($elname, 0, PARAM_INT);
-    if ($param) {
-        require_sesskey();
+    // this is a nasty hack, ideally all new elements should use arrays here or there should be a new parameter
+    if (!isset($_REQUEST[$elname])) {
+        return 0;
     }
-    if (is_array($param)) {
+    if (is_array($_REQUEST[$elname])) {
+        $param = optional_param_array($elname, 0, PARAM_INT);
         if (!empty($param['itemid'])) {
             $param = $param['itemid'];
         } else {
             debugging('Missing itemid, maybe caused by unset maxfiles option', DEBUG_DEVELOPER);
             return false;
         }
+
+    } else {
+        $param = optional_param($elname, 0, PARAM_INT);
     }
+
+    if ($param) {
+        require_sesskey();
+    }
+
     return $param;
 }
 
@@ -1725,8 +1734,20 @@ function send_file($path, $filename, $lifetime = 'default' , $filter=0, $pathiss
     }
 */
 
-    //try to disable automatic sid rewrite in cookieless mode
-    @ini_set("session.use_trans_sid", "false");
+    if ($lifetime > 0 && !empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+        // get unixtime of request header; clip extra junk off first
+        $since = strtotime(preg_replace('/;.*$/','',$_SERVER["HTTP_IF_MODIFIED_SINCE"]));
+        if ($since && $since >= $lastmodified) {
+            header('HTTP/1.1 304 Not Modified');
+            header('Expires: '. gmdate('D, d M Y H:i:s', time() + $lifetime) .' GMT');
+            header('Cache-Control: max-age='.$lifetime);
+            header('Content-Type: '.$mimetype);
+            if ($dontdie) {
+                return;
+            }
+            die;
+        }
+    }
 
     //do not put '@' before the next header to detect incorrect moodle configurations,
     //error should be better than "weird" empty lines for admins/users
@@ -1925,12 +1946,23 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
     $lastmodified = $stored_file->get_timemodified();
     $filesize     = $stored_file->get_filesize();
 
-    //try to disable automatic sid rewrite in cookieless mode
-    @ini_set("session.use_trans_sid", "false");
+    if ($lifetime > 0 && !empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+        // get unixtime of request header; clip extra junk off first
+        $since = strtotime(preg_replace('/;.*$/','',$_SERVER["HTTP_IF_MODIFIED_SINCE"]));
+        if ($since && $since >= $lastmodified) {
+            header('HTTP/1.1 304 Not Modified');
+            header('Expires: '. gmdate('D, d M Y H:i:s', time() + $lifetime) .' GMT');
+            header('Cache-Control: max-age='.$lifetime);
+            header('Content-Type: '.$mimetype);
+            if ($dontdie) {
+                return;
+            }
+            die;
+        }
+    }
 
     //do not put '@' before the next header to detect incorrect moodle configurations,
     //error should be better than "weird" empty lines for admins/users
-    //TODO: should we remove all those @ before the header()? Are all of the values supported on all servers?
     header('Last-Modified: '. gmdate('D, d M Y H:i:s', $lastmodified) .' GMT');
 
     // if user is using IE, urlencode the filename so that multibyte file name will show up correctly on popup
@@ -2002,7 +2034,6 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
     }
 
     if (empty($filter)) {
-        $filtered = false;
         if ($mimetype == 'text/plain') {
             header('Content-Type: Text/plain; charset=utf-8'); //add encoding
         } else {
@@ -2015,11 +2046,7 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
         prepare_file_content_sending();
 
         // send the contents
-        if ($filtered) {
-            echo $text;
-        } else {
-            $stored_file->readfile();
-        }
+        $stored_file->readfile();
 
     } else {     // Try to put the file through filters
         if ($mimetype == 'text/html') {
@@ -2149,7 +2176,7 @@ function put_records_csv($file, $records, $table = NULL) {
 
     echo "x";
 
-    if(!($fp = @fopen($CFG->dataroot.'/temp/'.$file, 'w'))) {
+    if(!($fp = @fopen($CFG->tempdir.'/'.$file, 'w'))) {
         print_error('put_records_csv failed to open '.$file);
     }
 
@@ -2908,9 +2935,9 @@ class curl_cache {
     function __construct($module = 'repository'){
         global $CFG;
         if (!empty($module)) {
-            $this->dir = $CFG->dataroot.'/cache/'.$module.'/';
+            $this->dir = $CFG->cachedir.'/'.$module.'/';
         } else {
-            $this->dir = $CFG->dataroot.'/cache/misc/';
+            $this->dir = $CFG->cachedir.'/misc/';
         }
         if (!file_exists($this->dir)) {
             mkdir($this->dir, $CFG->directorypermissions, true);

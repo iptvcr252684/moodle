@@ -77,16 +77,16 @@ class core_question_renderer extends plugin_renderer_base {
         $output .= html_writer::start_tag('div', array('class' => 'content'));
 
         $output .= html_writer::tag('div',
-                $this->add_part_heading(get_string('questiontext', 'question'),
-                $this->formulation($qa, $behaviouroutput, $qtoutput, $options)),
+                $this->add_part_heading($qtoutput->formulation_heading(),
+                    $this->formulation($qa, $behaviouroutput, $qtoutput, $options)),
                 array('class' => 'formulation'));
         $output .= html_writer::nonempty_tag('div',
                 $this->add_part_heading(get_string('feedback', 'question'),
-                $this->outcome($qa, $behaviouroutput, $qtoutput, $options)),
+                    $this->outcome($qa, $behaviouroutput, $qtoutput, $options)),
                 array('class' => 'outcome'));
         $output .= html_writer::nonempty_tag('div',
                 $this->add_part_heading(get_string('comments', 'question'),
-                $this->manual_comment($qa, $behaviouroutput, $qtoutput, $options)),
+                    $this->manual_comment($qa, $behaviouroutput, $qtoutput, $options)),
                 array('class' => 'comment'));
         $output .= html_writer::nonempty_tag('div',
                 $this->response_history($qa, $behaviouroutput, $qtoutput, $options),
@@ -380,6 +380,7 @@ class core_question_renderer extends plugin_renderer_base {
 
         foreach ($qa->get_full_step_iterator() as $i => $step) {
             $stepno = $i + 1;
+
             $rowclass = '';
             if ($stepno == $qa->get_num_steps()) {
                 $rowclass = 'current';
@@ -391,13 +392,16 @@ class core_question_renderer extends plugin_renderer_base {
                                 array('width' => 450, 'height' => 650)),
                         array('title' => get_string('reviewresponse', 'question')));
             }
+
+            $restrictedqa = new question_attempt_with_restricted_history($qa, $i, null);
+
             $user = new stdClass();
             $user->id = $step->get_user_id();
             $row = array(
                 $stepno,
                 userdate($step->get_timecreated(), get_string('strftimedatetimeshort')),
                 s($qa->summarise_action($step)),
-                $step->get_state()->default_string(true),
+                $restrictedqa->get_state_string($options->correctness),
             );
 
             if ($options->marks >= question_display_options::MARK_AND_MAX) {

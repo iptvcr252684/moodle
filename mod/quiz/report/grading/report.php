@@ -439,7 +439,7 @@ class quiz_grading_report extends quiz_default_report {
         if (!$qubaids) {
             return false;
         }
-        $qubaids = clean_param(explode(',', $qubaids), PARAM_INT);
+        $qubaids = clean_param_array(explode(',', $qubaids), PARAM_INT);
 
         $slots = optional_param('slots', '', PARAM_SEQUENCE);
         if (!$slots) {
@@ -471,7 +471,7 @@ class quiz_grading_report extends quiz_default_report {
             return;
         }
 
-        $qubaids = clean_param(explode(',', $qubaids), PARAM_INT);
+        $qubaids = clean_param_array(explode(',', $qubaids), PARAM_INT);
         $attempts = $this->load_attempts_by_usage_ids($qubaids);
 
         $transaction = $DB->start_delegated_transaction();
@@ -520,7 +520,7 @@ class quiz_grading_report extends quiz_default_report {
      */
     protected function get_usage_ids_where_question_in_state($summarystate, $slot,
             $questionid = null, $orderby = 'random', $page = 0, $pagesize = null) {
-        global $CFG;
+        global $CFG, $DB;
         $dm = new question_engine_data_mapper();
 
         if ($pagesize && $orderby != 'random') {
@@ -544,7 +544,7 @@ class quiz_grading_report extends quiz_default_report {
         } else if ($orderby == 'student' || $orderby == 'idnumber') {
             $qubaids->from .= " JOIN {user} u ON quiza.userid = u.id ";
             if ($orderby == 'student') {
-                $orderby = sql_fullname('u.firstname', 'u.lastname');
+                $orderby = $DB->sql_fullname('u.firstname', 'u.lastname');
             }
         }
 

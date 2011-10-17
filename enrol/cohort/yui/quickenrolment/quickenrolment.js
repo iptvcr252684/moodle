@@ -122,11 +122,7 @@ YUI.add('moodle-enrol_cohort-quickenrolment', function(Y) {
                     break;
                 case 'defaultcohortroleloaded':
                     defaultrole = this.get(DEFAULTCOHORTROLE);
-                    panel.get('contentBox').one('.'+CSS.PANELROLES).all('option').each(function(){
-                        if (this.get('value')==defaultrole) {
-                            this.setAttribute('selected', true);
-                        }
-                    });
+                    panel.get('contentBox').one('.'+CSS.PANELROLES+' select').set('value', defaultrole);
                     break;
             }
         },
@@ -339,4 +335,4 @@ YUI.add('moodle-enrol_cohort-quickenrolment', function(Y) {
         }
     }
 
-}, '@VERSION@', {requires:['base','node', 'overlay', 'io', 'test', 'json-parse', 'event-delegate', 'dd-plugin', 'event-key', 'moodle-enrol-notification']});
+}, '@VERSION@', {requires:['base','node', 'overlay', 'io-base', 'test', 'json-parse', 'event-delegate', 'dd-plugin', 'event-key', 'moodle-enrol-notification']});

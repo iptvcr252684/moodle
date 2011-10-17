@@ -1187,7 +1187,7 @@ function reset_text_filters_cache() {
     global $CFG, $DB;
 
     $DB->delete_records('cache_text');
-    $purifdir = $CFG->dataroot.'/cache/htmlpurifier';
+    $purifdir = $CFG->cachedir.'/htmlpurifier';
     remove_dir($purifdir, true);
 }
 
@@ -1514,7 +1514,7 @@ function purify_html($text, $options = array()) {
     if (empty($purifiers[$type])) {
 
         // make sure the serializer dir exists, it should be fine if it disappears later during cache reset
-        $cachedir = $CFG->dataroot.'/cache/htmlpurifier';
+        $cachedir = $CFG->cachedir.'/htmlpurifier';
         check_dir_exists($cachedir);
 
         require_once $CFG->libdir.'/htmlpurifier/HTMLPurifier.safe-includes.php';
@@ -2233,10 +2233,10 @@ function navmenulist($course, $sections, $modinfo, $strsection, $strjumpto, $wid
                 if ($course->format == 'weeks' or empty($thissection->summary)) {
                     $item = $strsection ." ". $mod->sectionnum;
                 } else {
-                    if (strlen($thissection->summary) < ($width-3)) {
+                    if (textlib::strlen($thissection->summary) < ($width-3)) {
                         $item = $thissection->summary;
                     } else {
-                        $item = substr($thissection->summary, 0, $width).'...';
+                        $item = textlib::substr($thissection->summary, 0, $width).'...';
                     }
                 }
                 $menu[] = '<li class="section"><span>'.$item.'</span>';
@@ -2252,8 +2252,8 @@ function navmenulist($course, $sections, $modinfo, $strsection, $strjumpto, $wid
 
         $url = $mod->modname .'/view.php?id='. $mod->id;
         $mod->name = strip_tags(format_string($mod->name ,true));
-        if (strlen($mod->name) > ($width+5)) {
-            $mod->name = substr($mod->name, 0, $width).'...';
+        if (textlib::strlen($mod->name) > ($width+5)) {
+            $mod->name = textlib::substr($mod->name, 0, $width).'...';
         }
         if (!$mod->visible) {
             $mod->name = '('.$mod->name.')';

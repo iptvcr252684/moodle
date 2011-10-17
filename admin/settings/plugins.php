@@ -74,6 +74,7 @@ if ($hassiteconfig) {
     $temp->add(new admin_setting_manageauths());
     $temp->add(new admin_setting_heading('manageauthscommonheading', get_string('commonsettings', 'admin'), ''));
     $temp->add(new admin_setting_special_registerauth());
+    $temp->add(new admin_setting_configcheckbox('authpreventaccountcreation', get_string('authpreventaccountcreation', 'admin'), get_string('authpreventaccountcreation_help', 'admin'), 0));
     $temp->add(new admin_setting_configcheckbox('loginpageautofocus', get_string('loginpageautofocus', 'admin'), get_string('loginpageautofocus_help', 'admin'), 0));
     $temp->add(new admin_setting_configselect('guestloginbutton', get_string('guestloginbutton', 'auth'),
                                               get_string('showguestlogin', 'auth'), '1', array('0'=>get_string('hide'), '1'=>get_string('show'))));
@@ -344,6 +345,8 @@ if ($hassiteconfig) {
     $temp = new admin_settingpage('webservicesoverview', get_string('webservicesoverview', 'webservice'));
     $temp->add(new admin_setting_webservicesoverview());
     $ADMIN->add('webservicesettings', $temp);
+    //API documentation
+    $ADMIN->add('webservicesettings', new admin_externalpage('webservicedocumentation', get_string('wsdocapi', 'webservice'), "$CFG->wwwroot/$CFG->admin/webservice/documentation.php", 'moodle/site:config', false));
     /// manage service
     $temp = new admin_settingpage('externalservices', get_string('externalservices', 'webservice'));
     $enablemobiledocurl = new moodle_url(get_docs_url('Enable_mobile_web_services'));
@@ -471,6 +474,20 @@ foreach (get_plugin_list('report') as $plugin => $plugindir) {
     $ADMIN->add('reports', new admin_externalpage('report'.$plugin, $reportname, $www_path, 'moodle/site:viewreports'));
 }
 
+// Now add various admin tools
+foreach (get_plugin_list('tool') as $plugin => $plugindir) {
+    $settings_path = "$plugindir/settings.php";
+    if (file_exists($settings_path)) {
+        include($settings_path);
+    }
+}
+
+/// Add all admin tools
+if ($hassiteconfig) {
+    $ADMIN->add('modules', new admin_category('tools', get_string('tools', 'admin')));
+    $ADMIN->add('tools', new admin_externalpage('managetools', get_string('toolsmanage', 'admin'),
+                                                     $CFG->wwwroot . '/' . $CFG->admin . '/tools.php'));
+}
 
 /// Add all local plugins - must be always last!
 if ($hassiteconfig) {

@@ -124,7 +124,7 @@ function xmldb_main_upgrade($oldversion) {
     }
 
     if ($oldversion < 2008030602) {
-        @unlink($CFG->dataroot.'/cache/languages');
+        @unlink($CFG->cachedir.'/languages');
 
         if (file_exists("$CFG->dataroot/lang")) {
             // rename old lang directory so that the new and old langs do not mix
@@ -1224,20 +1224,6 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
         upgrade_main_savepoint(true, 2009021800);
     }
 
-    if ($oldversion < 2009021801) {
-    /// Define field backuptype to be added to backup_log
-        $table = new xmldb_table('backup_log');
-        $field = new xmldb_field('backuptype', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL, null, null, 'info');
-    /// Conditionally Launch add field backuptype and set all old records as 'scheduledbackup' records.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-            $DB->execute("UPDATE {backup_log} SET backuptype='scheduledbackup'");
-        }
-
-    /// Main savepoint reached
-        upgrade_main_savepoint(true, 2009021801);
-    }
-
     /// Add default sort order for question types.
     if ($oldversion < 2009030300) {
         set_config('multichoice_sortorder', 1, 'question');
@@ -2332,22 +2318,8 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
         }
         $dbman->create_table($table);
 
-        // now inform admins that some settings require attention after upgrade
-        if (($CFG->bloglevel == BLOG_COURSE_LEVEL || $CFG->bloglevel == BLOG_GROUP_LEVEL) && empty($CFG->bloglevel_upgrade_complete)) {
-            echo $OUTPUT->notification(get_string('bloglevelupgradenotice', 'admin'));
+       // upgrade notice is now in admin/tool/bloglevelupgrade/
 
-            $site = get_site();
-
-            $a = new StdClass;
-            $a->sitename = $site->fullname;
-            $a->fixurl   = "$CFG->wwwroot/$CFG->admin/bloglevelupgrade.php";
-
-            $subject = get_string('bloglevelupgrade', 'admin');
-            $description = get_string('bloglevelupgradedescription', 'admin', $a);
-
-            // can not use messaging here because it is not configured yet!
-            upgrade_log(UPGRADE_LOG_NOTICE, null, $subject, $description);
-        }
     /// Main savepoint reached
         upgrade_main_savepoint(true, 2009103000);
     }
@@ -6045,11 +6017,12 @@ WHERE gradeitemid IS NOT NULL AND grademax IS NOT NULL");
          // Define field secret to be added to registration_hubs
         $table = new xmldb_table('registration_hubs');
         $field = new xmldb_field('secret', XMLDB_TYPE_CHAR, '255', null, null, null,
-                $CFG->siteidentifier, 'confirmed');
+                null, 'confirmed');
 
-        // Conditionally launch add field secret
+        // Conditionally launch add field secret and set its value
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
+            $DB->set_field('registration_hubs', 'secret', $CFG->siteidentifier);
         }
 
         // Main savepoint reached
@@ -6651,12 +6624,174 @@ FROM
         upgrade_main_savepoint(true, 2011071300.01);
     }
 
+    if ($oldversion < 2011081700.01) {
+        // Remove category_sortorder index that was supposed to be removed long time ago
+        $table = new xmldb_table('course');
+        $index = new xmldb_index('category_sortorder', XMLDB_INDEX_UNIQUE, array('category', 'sortorder'));
+
+        if ($dbman->index_exists($table, $index)) {
+            $dbman->drop_index($table, $index);
+        }
+        upgrade_main_savepoint(true, 2011081700.01);
+    }
+
+    if ($oldversion < 2011081700.02) {
+        // remove safety block backup from 2.0 upgrade
+        $table = new xmldb_table('block_pinned_old');
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+        $table = new xmldb_table('block_instance_old');
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+        upgrade_main_savepoint(true, 2011081700.02);
+    }
+
+    if ($oldversion < 2011083100.02) {
+        // Define field showdescription to be added to course_modules
+        $table = new xmldb_table('course_modules');
+        $field = new xmldb_field('showdescription', XMLDB_TYPE_INTEGER, '1',
+                XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'showavailability');
+
+        // Conditionally launch add field showdescription
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011083100.02);
+    }
+
+    if ($oldversion < 2011090700.01) {
+        // Changing the default of field secret on table registration_hubs to NULL
+        $table = new xmldb_table('registration_hubs');
+        $field = new xmldb_field('secret', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'confirmed');
+
+        // Launch change of default for field secret
+        $dbman->change_field_default($table, $field);
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011090700.01);
+    }
+
+    if ($oldversion < 2011091200.00) {
+        //preference not required since 2.0
+        $DB->delete_records('user_preferences', array('name'=>'message_showmessagewindow'));
+
+        //re-introducing emailstop. check that its turned off so people dont suddenly stop getting notifications
+        $DB->set_field('user', 'emailstop', 0, array('emailstop' => 1));
+
+        upgrade_main_savepoint(true, 2011091200.00);
+    }
+
+    if ($oldversion < 2011091300.00) {
+        // Increase the length of the of the course shortname field as it is now going
+        // to be consistently filtered and 100 characters is practically useless for
+        // things like the multilang filter.
+
+        $table = new xmldb_table('course');
+        $field = new xmldb_field('shortname', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'fullname');
+        $index = new xmldb_index('shortname', XMLDB_INDEX_NOTUNIQUE, array('shortname'));
+
+        // First check the shortname field exists... pretty heavy mod if it doesnt!
+        if ($dbman->field_exists($table, $field)) {
+            // Conditionally launch drop index shortname, this is required to happen
+            // before we can edit the field.
+            if ($dbman->index_exists($table, $index)) {
+                $dbman->drop_index($table, $index);
+            }
+
+            // Launch change of precision for field shortname
+            $dbman->change_field_precision($table, $field);
+            // Add the index back to the table now that we're finished our mods
+            $dbman->add_index($table, $index);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011091300.00);
+    }
+
+    if ($oldversion < 2011091600.01) {
+        // It has been decided that it is now safe to drop the backup_log table
+        // as it hasn't been used within 2+.
+
+        // Define table backup_log to be dropped
+        $table = new xmldb_table('backup_log');
+
+        // Conditionally launch drop table for backup_log
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011091600.01);
+    }
+
+    if ($oldversion < 2011092800.01) {
+        // Check for potential missing columns in the grade_items_history
+
+        $table = new xmldb_table('grade_items_history');
+        $field = new xmldb_field('display', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, 'sortorder');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        $field = new xmldb_field('decimals', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, null, null, null, 'display');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        } else {
+            //check that the grade_items_history.decimals allows nulls
+            //Somehow some Moodle databases have this column marked as "not null"
+            $columns = $DB->get_columns('grade_items_history');
+            if (array_key_exists('display', $columns) && !empty($columns['display']->not_null)) {
+                $dbman->change_field_notnull($table, $field);
+            }
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011092800.01);
+    }
+
+    if ($oldversion < 2011092800.02) {
+        // Check for potential missing columns in the grade_categories_history
+
+        $table = new xmldb_table('grade_categories_history');
+        $field = new xmldb_field('hidden', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, 0, 'timemodified');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011092800.02);
+    }
+
+    if ($oldversion < 2011092800.03) {
+        // Check for potential missing columns in the grade_outcomes_history
+
+        $table = new xmldb_table('grade_outcomes_history');
+        $field = new xmldb_field('descriptionformat', XMLDB_TYPE_INTEGER, '2', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, 0, 'description');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011092800.03);
+    }
+
+    if ($oldversion < 2011100700.02) {
+        // Define field idnumber to be added to course_categories
+        $table = new xmldb_table('course_categories');
+        $field = new xmldb_field('idnumber', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'name');
+
+        // Conditionally launch add field idnumber
+        if (!$dbman->field_exists($table,$field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2011100700.02);
+    }
 
     return true;
 }
 
-//TODO: Cleanup before the 2.0 release - we do not want to drag along these dev machine fixes forever
-// 1/ drop block_pinned_old table here and in install.xml
-// 2/ drop block_instance_old table here and in install.xml
-
-//TODO: AFTER 2.0 remove the column user->emailstop and the user preference "message_showmessagewindow"

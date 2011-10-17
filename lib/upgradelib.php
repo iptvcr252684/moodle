@@ -114,6 +114,12 @@ class plugin_defective_exception extends moodle_exception {
 function upgrade_main_savepoint($result, $version, $allowabort=true) {
     global $CFG;
 
+    //sanity check to avoid confusion with upgrade_mod_savepoint usage.
+    if (!is_bool($allowabort)) {
+        $errormessage = 'Parameter type mismatch. Are you mixing up upgrade_main_savepoint() and upgrade_mod_savepoint()?';
+        throw new coding_exception($errormessage);
+    }
+
     if (!$result) {
         throw new upgrade_exception(null, $version);
     }
@@ -270,14 +276,11 @@ function upgrade_plugins($type, $startcallback, $endcallback, $verbose) {
     $plugs = get_plugin_list($type);
 
     foreach ($plugs as $plug=>$fullplug) {
-        $component = $type.'_'.$plug; // standardised plugin name
+        $component = clean_param($type.'_'.$plug, PARAM_COMPONENT); // standardised plugin name
 
         // check plugin dir is valid name
-        $cplug = strtolower($plug);
-        $cplug = clean_param($cplug, PARAM_SAFEDIR);
-        $cplug = str_replace('-', '', $cplug);
-        if ($plug !== $cplug) {
-            throw new plugin_defective_exception($component, 'Invalid plugin directory name.');
+        if (empty($component)) {
+            throw new plugin_defective_exception($type.'_'.$plug, 'Invalid plugin directory name.');
         }
 
         if (!is_readable($fullplug.'/version.php')) {
@@ -424,15 +427,11 @@ function upgrade_plugins_modules($startcallback, $endcallback, $verbose) {
             continue;
         }
 
-        $component = 'mod_'.$mod;
+        $component = clean_param('mod_'.$mod, PARAM_COMPONENT);
 
         // check module dir is valid name
-        $cmod = strtolower($mod);
-        $cmod = clean_param($cmod, PARAM_SAFEDIR);
-        $cmod = str_replace('-', '', $cmod);
-        $cmod = str_replace('_', '', $cmod); // modules MUST not have '_' in name and never will, sorry
-        if ($mod !== $cmod) {
-            throw new plugin_defective_exception($component, 'Invalid plugin directory name.');
+        if (empty($component)) {
+            throw new plugin_defective_exception('mod_'.$mod, 'Invalid plugin directory name.');
         }
 
         if (!is_readable($fullmod.'/version.php')) {
@@ -587,18 +586,15 @@ function upgrade_plugins_blocks($startcallback, $endcallback, $verbose) {
             $first_install = ($DB->count_records('block_instances') == 0);
         }
 
-        if ($blockname == 'NEWBLOCK') {   // Someone has unzipped the template, ignore it
+        if ($blockname === 'NEWBLOCK') {   // Someone has unzipped the template, ignore it
             continue;
         }
 
-        $component = 'block_'.$blockname;
+        $component = clean_param('block_'.$blockname, PARAM_COMPONENT);
 
         // check block dir is valid name
-        $cblockname = strtolower($blockname);
-        $cblockname = clean_param($cblockname, PARAM_SAFEDIR);
-        $cblockname = str_replace('-', '', $cblockname);
-        if ($blockname !== $cblockname) {
-            throw new plugin_defective_exception($component, 'Invalid plugin directory name.');
+        if (empty($component)) {
+            throw new plugin_defective_exception('block_'.$blockname, 'Invalid plugin directory name.');
         }
 
         if (!is_readable($fullblock.'/version.php')) {
@@ -1297,42 +1293,36 @@ function upgrade_init_javascript() {
  *
  * @param string $lang the code of the language to update, defaults to the current language
  */
-function upgrade_language_pack($lang='') {
-    global $CFG, $OUTPUT;
+function upgrade_language_pack($lang = null) {
+    global $CFG;
 
-    get_string_manager()->reset_caches();
+    if (!empty($CFG->skiplangupgrade)) {
+        return;
+    }
 
-    if (empty($lang)) {
+    if (!file_exists("$CFG->dirroot/$CFG->admin/tool/langimport/lib.php")) {
+        // weird, somebody uninstalled the import utility
+        return;
+    }
+
+    if (!$lang) {
         $lang = current_language();
     }
 
-    if ($lang == 'en') {
-        return true;  // Nothing to do
+    if (!get_string_manager()->translation_exists($lang)) {
+        return;
+    }
+
+    get_string_manager()->reset_caches();
+
+    if ($lang === 'en') {
+        return;  // Nothing to do
     }
 
     upgrade_started(false);
-    echo $OUTPUT->heading(get_string('langimport', 'admin').': '.$lang);
 
-    @mkdir ($CFG->dataroot.'/temp/');    //make it in case it's a fresh install, it might not be there
-    @mkdir ($CFG->dataroot.'/lang/');
-
-    require_once($CFG->libdir.'/componentlib.class.php');
-
-    $installer = new lang_installer($lang);
-    $results = $installer->run();
-    foreach ($results as $langcode => $langstatus) {
-        switch ($langstatus) {
-        case lang_installer::RESULT_DOWNLOADERROR:
-            echo $OUTPUT->notification($langcode . '.zip');
-            break;
-        case lang_installer::RESULT_INSTALLED:
-            echo $OUTPUT->notification(get_string('langpackinstalled', 'admin', $langcode), 'notifysuccess');
-            break;
-        case lang_installer::RESULT_UPTODATE:
-            echo $OUTPUT->notification(get_string('langpackuptodate', 'admin', $langcode), 'notifysuccess');
-            break;
-        }
-    }
+    require_once("$CFG->dirroot/$CFG->admin/tool/langimport/lib.php");
+    tool_langimport_preupgrade_update($lang);
 
     get_string_manager()->reset_caches();
 
@@ -1395,11 +1385,7 @@ function upgrade_core($version, $verbose) {
         purge_all_caches();
 
         // Upgrade current language pack if we can
-        if (empty($CFG->skiplangupgrade)) {
-            if (get_string_manager()->translation_exists(current_language())) {
-                upgrade_language_pack(false);
-            }
-        }
+        upgrade_language_pack();
 
         print_upgrade_part_start('moodle', false, $verbose);
 

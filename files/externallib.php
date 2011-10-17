@@ -142,8 +142,8 @@ class moodle_file_external extends external_api {
                     new external_single_structure(
                         array(
                             'contextid' => new external_value(PARAM_INT, ''),
-                            'component' => new external_value(PARAM_ALPHAEXT, ''),
-                            'filearea'  => new external_value(PARAM_ALPHAEXT, ''),
+                            'component' => new external_value(PARAM_COMPONENT, ''),
+                            'filearea'  => new external_value(PARAM_AREA, ''),
                             'itemid'    => new external_value(PARAM_INT, ''),
                             'filepath'  => new external_value(PARAM_TEXT, ''),
                             'filename'  => new external_value(PARAM_TEXT, ''),
@@ -154,8 +154,8 @@ class moodle_file_external extends external_api {
                     new external_single_structure(
                         array(
                             'contextid' => new external_value(PARAM_INT, ''),
-                            'component' => new external_value(PARAM_ALPHAEXT, ''),
-                            'filearea'  => new external_value(PARAM_ALPHAEXT, ''),
+                            'component' => new external_value(PARAM_COMPONENT, ''),
+                            'filearea'  => new external_value(PARAM_AREA, ''),
                             'itemid'   => new external_value(PARAM_INT, ''),
                             'filepath' => new external_value(PARAM_TEXT, ''),
                             'filename' => new external_value(PARAM_FILE, ''),
@@ -176,8 +176,8 @@ class moodle_file_external extends external_api {
         return new external_function_parameters(
             array(
                 'contextid' => new external_value(PARAM_INT, 'context id'),
-                'component' => new external_value(PARAM_ALPHAEXT, 'component'),
-                'filearea'  => new external_value(PARAM_ALPHAEXT, 'file area'),
+                'component' => new external_value(PARAM_COMPONENT, 'component'),
+                'filearea'  => new external_value(PARAM_AREA, 'file area'),
                 'itemid'    => new external_value(PARAM_INT, 'associated id'),
                 'filepath'  => new external_value(PARAM_PATH, 'file path'),
                 'filename'  => new external_value(PARAM_FILE, 'file name'),
@@ -207,10 +207,10 @@ class moodle_file_external extends external_api {
             throw new moodle_exception('nofile');
         }
         // saving file
-        $dir = make_upload_directory('temp/wsupload');
+        $dir = make_temp_directory('wsupload');
 
         if (empty($fileinfo['filename'])) {
-            $filename = uniqid('wsupload').'_'.time().'.tmp';
+            $filename = uniqid('wsupload', true).'_'.time().'.tmp';
         } else {
             $filename = $fileinfo['filename'];
         }
@@ -286,8 +286,8 @@ class moodle_file_external extends external_api {
         return new external_single_structure(
              array(
                  'contextid' => new external_value(PARAM_INT, ''),
-                 'component' => new external_value(PARAM_ALPHAEXT, ''),
-                 'filearea'  => new external_value(PARAM_ALPHAEXT, ''),
+                 'component' => new external_value(PARAM_COMPONENT, ''),
+                 'filearea'  => new external_value(PARAM_AREA, ''),
                  'itemid'   => new external_value(PARAM_INT, ''),
                  'filepath' => new external_value(PARAM_TEXT, ''),
                  'filename' => new external_value(PARAM_FILE, ''),

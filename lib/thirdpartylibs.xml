@@ -4,7 +4,7 @@
     <location>adodb</location>
     <name>AdoDB</name>
     <license>GPL/BSD</license>
-    <version>5.11</version>
+    <version>5.14</version>
     <licenseversion>2.1+</licenseversion>
   </library>
   <library>
@@ -32,7 +32,7 @@
     <location>editor/tinymce/tiny_mce</location>
     <name>TinyMCE</name>
     <license>LGPL</license>
-    <version>3.4.2</version>
+    <version>3.4.5</version>
     <licenseversion>2.1+</licenseversion>
   </library>
   <library>
@@ -228,7 +228,7 @@
     <location>yui</location>
     <name>YUI</name>
     <license>BSD</license>
-    <version>3.3.2</version>
+    <version>3.4.1</version>
     <licenseversion></licenseversion>
   </library>
   <library>

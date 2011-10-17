@@ -254,6 +254,8 @@ function wiki_supports($feature) {
         return false;
     case FEATURE_BACKUP_MOODLE2:
         return true;
+    case FEATURE_SHOW_DESCRIPTION:
+        return true;
 
     default:
         return null;
@@ -556,6 +558,11 @@ function wiki_extend_navigation(navigation_node $navref, $course, $module, $cm) 
         if (has_capability('mod/wiki:viewpage', $context)) {
             $link = new moodle_url('/mod/wiki/files.php', array('pageid' => $pageid));
             $node = $navref->add(get_string('files', 'wiki'), $link, navigation_node::TYPE_SETTING);
+        }
+
+        if (has_capability('mod/wiki:managewiki', $context)) {
+            $link = new moodle_url('/mod/wiki/admin.php', array('pageid' => $pageid));
+            $node = $navref->add(get_string('admin', 'wiki'), $link, navigation_node::TYPE_SETTING);
         }
     }
 }

@@ -30,22 +30,18 @@
 #page-admin-course-index .editcourse td {padding-left:10px;padding-right:10px;}
 #page-admin-course-index .editcourse .count {text-align:right;}
 
-#page-admin-report-unittest-index .exception pre {padding: 8px;}
-#page-admin-report-unittest-index .unittestsummary {padding: 8px;margin-top: 1em;}
-#page-admin-report-unittest-index span.notice {color: teal;}
-#page-admin-report-unittest-index b.pass {color: green;}
-#page-admin-report-unittest-index b.fail, b.exception {color: red;}
-#page-admin-report-unittest-index .exception, .exception pre {background-color: #FDD;}
-#page-admin-report-unittest-index .unittestsummary {color: white;}
-#page-admin-report-unittest-index .unittestsummary.failed {background-color: red;}
-#page-admin-report-unittest-index .unittestsummary.passed {background-color: green;}
-
 #page-admin-report-security-index .timewarninghidden {display:none;}
 #page-admin-report-security-index .statuswarning {background-color: #f0e000;}
 #page-admin-report-security-index .statusserious {background-color: #f07000;}
 #page-admin-report-security-index .statuscritical {background-color: #f00000;}
 #page-admin-report-capability-index .rolecaps th {text-align: left;}
 #page-admin-report-capability-index #settingsform #capabilitysearch {width: 30em;}
+
+#page-admin-report-backups-index .backup-report {width:100%;}
+#page-admin-report-backups-index .backup-error,
+#page-admin-report-backups-index .backup-unfinished {color: #f00000;}
+#page-admin-report-backups-index .backup-skipped,
+#page-admin-report-backups-index .backup-ok {color: #006400;}
 
 #page-admin-qbehaviours .disabled {color: gray;}
 #page-admin-qbehaviours th {white-space: normal;}
@@ -83,8 +79,6 @@
 #page-admin-roles-assign .cell.c1 {padding-top: 0.75em;}
 #page-admin-roles-override .overridenotice,
 #page-admin-roles-define .definenotice {margin: 1em 10% 2em 10%;text-align: left;}
-
-#page-admin-langimport .generalbox table {margin:auto;width:100%;}
 
 #page-admin-index .adminerror .singlebutton,
 #page-admin-index .adminwarning .singlebutton,
@@ -156,6 +150,8 @@
 #adminsettings .form-item .form-setting .form-multicheckbox li {list-style: none;}
 #adminsettings .form-item .form-setting .form-multicheckbox ul {padding:0;margin:0;}
 #adminsettings .form-item .form-setting .defaultsnext {margin-right: 0.5em;display: inline;}
+#adminsettings .form-item .form-setting .locked-checkbox {margin-right: 0.2em; margin-left: 0.5em;display: inline;}
+.dir-rtl #adminsettings .form-item .form-setting .locked-checkbox {margin-right: 0.5em; margin-left: 0.2em;display: inline;}
 #adminsettings .form-item .form-setting .form-password .unmask,
 #adminsettings .form-item .form-setting .form-defaultinfo {display: inline;}
 #adminsettings .form-item .form-description {display: block;margin: 0.5em 0 0em 14.25em;text-align: left;}

@@ -36,6 +36,8 @@
  *  - $CFG->dataroot - Path to moodle data files directory on server's filesystem.
  *  - $CFG->dirroot  - Path to moodle's library folder on server's filesystem.
  *  - $CFG->libdir   - Path to moodle's library folder on server's filesystem.
+ *  - $CFG->tempdir  - Path to moodle's temp file directory on server's filesystem.
+ *  - $CFG->cachedir - Path to moodle's cache directory on server's filesystem.
  *
  * @global object $CFG
  * @name $CFG
@@ -95,6 +97,16 @@ if (!isset($CFG->admin)) {   // Just in case it isn't defined in config.php
 
 // Set up some paths.
 $CFG->libdir = $CFG->dirroot .'/lib';
+
+// Allow overriding of tempdir but be backwards compatible
+if (!isset($CFG->tempdir)) {
+    $CFG->tempdir = "$CFG->dataroot/temp";
+}
+
+// Allow overriding of cachedir but be backwards compatible
+if (!isset($CFG->cachedir)) {
+    $CFG->cachedir = "$CFG->dataroot/cache";
+}
 
 // The current directory in PHP version 4.3.0 and above isn't necessarily the
 // directory of the script when run from the command line. The require_once()
@@ -183,6 +195,17 @@ if (file_exists("$CFG->dataroot/climaintenance.html")) {
     }
 }
 
+if (CLI_SCRIPT) {
+    // sometimes people use different PHP binary for web and CLI, make 100% sure they have the supported PHP version
+    if (version_compare(phpversion(), '5.3.2') < 0) {
+        $phpversion = phpversion();
+        // do NOT localise - lang strings would not work here and we CAN NOT move it to later place
+        echo "Moodle 2.1 or later requires at least PHP 5.3.2 (currently using version $phpversion).\n";
+        echo "Some servers may have multiple PHP versions installed, are you using the correct executable?\n";
+        exit(1);
+    }
+}
+
 // Detect ajax scripts - they are similar to CLI because we can not redirect, output html, etc.
 if (!defined('AJAX_SCRIPT')) {
     define('AJAX_SCRIPT', false);
@@ -199,8 +222,8 @@ if (empty($CFG->filepermissions)) {
 umask(0000);
 
 // exact version of currently used yui2 and 3 library
-$CFG->yui2version = '2.8.2';
-$CFG->yui3version = '3.2.0';
+$CFG->yui2version = '2.9.0';
+$CFG->yui3version = '3.4.1';
 
 
 // special support for highly optimised scripts that do not need libraries and DB connection
@@ -689,7 +712,7 @@ if (!empty($CFG->profilingenabled)) {
 // Process theme change in the URL.
 if (!empty($CFG->allowthemechangeonurl) and !empty($_GET['theme'])) {
     // we have to use _GET directly because we do not want this to interfere with _POST
-    $urlthemename = optional_param('theme', '', PARAM_SAFEDIR);
+    $urlthemename = optional_param('theme', '', PARAM_PLUGIN);
     try {
         $themeconfig = theme_config::load($urlthemename);
         // Makes sure the theme can be loaded without errors.

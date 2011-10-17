@@ -126,10 +126,6 @@ function cron_run() {
     }
     mtrace('Finished blocks');
 
-    //now do plagiarism checks
-    require_once($CFG->libdir.'/plagiarismlib.php');
-    plagiarism_cron();
-
     mtrace("Starting quiz reports");
     if ($reports = $DB->get_records_select('quiz_reports', "cron > 0 AND ((? - lastcron) > cron)", array($timenow))) {
         foreach ($reports as $report) {
@@ -186,6 +182,10 @@ function cron_run() {
         portfolio_cron();
         mtrace('done');
     }
+
+    //now do plagiarism checks
+    require_once($CFG->libdir.'/plagiarismlib.php');
+    plagiarism_cron();
 
 /// Run all core cron jobs, but not every time since they aren't too important.
 /// These don't have a timer to reduce load, so we'll use a random number
@@ -452,6 +452,7 @@ function cron_run() {
     cron_execute_plugin_type('qtype', 'question types');
     cron_execute_plugin_type('plagiarism', 'plagiarism plugins');
     cron_execute_plugin_type('theme', 'themes');
+    cron_execute_plugin_type('tool', 'admin tools');
 
     // and finally run any local cronjobs, if any
     if ($locals = get_plugin_list('local')) {

@@ -1228,7 +1228,7 @@ function get_import_export_formats($type) {
         }
     }
 
-    textlib_get_instance()->asort($fileformatnames);
+    collatorlib::asort($fileformatnames);
     return $fileformatnames;
 }
 
@@ -1342,6 +1342,11 @@ function question_has_capability_on($question, $cap, $cachecat = -1) {
             }
         }
         $question = $questions[$question];
+    }
+    if (empty($question->category)) {
+        // This can happen when we have created a fake 'missingtype' question to
+        // take the place of a deleted question.
+        return false;
     }
     if (!isset($categories[$question->category])) {
         if (!$categories[$question->category] = $DB->get_record('question_categories',

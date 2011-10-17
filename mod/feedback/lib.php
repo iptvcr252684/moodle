@@ -61,6 +61,7 @@ function feedback_supports($feature) {
         case FEATURE_GRADE_HAS_GRADE:         return false;
         case FEATURE_GRADE_OUTCOMES:          return false;
         case FEATURE_BACKUP_MOODLE2:          return true;
+        case FEATURE_SHOW_DESCRIPTION:        return true;
 
         default: return null;
     }
@@ -2683,7 +2684,9 @@ function feedback_send_email_anonym($cm, $feedback, $course) {
  * @return string the text you want to post
  */
 function feedback_send_email_text($info, $course) {
-    $posttext  = $course->shortname.' -> '.get_string('modulenameplural', 'feedback').' -> '.
+    $coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
+    $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));
+    $posttext  = $courseshortname.' -> '.get_string('modulenameplural', 'feedback').' -> '.
                     $info->feedback."\n";
     $posttext .= '---------------------------------------------------------------------'."\n";
     $posttext .= get_string("emailteachermail", "feedback", $info)."\n";
@@ -2702,8 +2705,11 @@ function feedback_send_email_text($info, $course) {
  */
 function feedback_send_email_html($info, $course, $cm) {
     global $CFG;
+    $coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
+    $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));
+
     $posthtml  = '<p><font face="sans-serif">'.
-                '<a href="'.$CFG->wwwroot.'/course/view.php?id='.$course->id.'">'.$course->shortname.'</a> ->'.
+                '<a href="'.$CFG->wwwroot.'/course/view.php?id='.$course->id.'">'.$courseshortname.'</a> ->'.
                 '<a href="'.$CFG->wwwroot.'/mod/feedback/index.php?id='.$course->id.'">'.get_string('modulenameplural', 'feedback').'</a> ->'.
                 '<a href="'.$CFG->wwwroot.'/mod/feedback/view.php?id='.$cm->id.'">'.$info->feedback.'</a></font></p>';
     $posthtml .= '<hr /><font face="sans-serif">';

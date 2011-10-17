@@ -22,7 +22,7 @@
 require_once(dirname(__FILE__) . '/../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
-$choose = optional_param('choose', '', PARAM_SAFEDIR);
+$choose = optional_param('choose', '', PARAM_PLUGIN);
 $reset  = optional_param('reset', 0, PARAM_BOOL);
 $device = optional_param('device', '', PARAM_TEXT);
 
@@ -43,7 +43,7 @@ if ($reset and confirm_sesskey()) {
     theme_reset_all_caches();
 
 } else if ($choose && $device && confirm_sesskey()) {
- 
+
     // Load the theme to make sure it is valid.
     $theme = theme_config::load($choose);
     // Get the config argument for the chosen device.
@@ -96,6 +96,7 @@ if (!empty($CFG->enabledevicedetection) && empty($device)) {
     $devices = get_device_type_list();
     foreach ($devices as $device) {
 
+        $headingthemename = ''; // To output the picked theme name when needed
         $themename = get_selected_theme_for_device_type($device);
         if (!$themename && $device == 'default') {
             $themename = theme_config::DEFAULT_THEME;
@@ -114,6 +115,8 @@ if (!empty($CFG->enabledevicedetection) && empty($device)) {
                 $screenshoturl = new moodle_url('/theme/image.php', array('theme' => $themename, 'image' => 'screenshot', 'component' => 'theme'));
                 // Contents of the screenshot/preview cell.
                 $screenshotcell = html_writer::empty_tag('img', array('src' => $screenshoturl, 'alt' => $strthemename));
+                // Show the name of the picked theme
+                $headingthemename = $OUTPUT->heading($strthemename, 3);
             }
         }
 
@@ -123,7 +126,7 @@ if (!empty($CFG->enabledevicedetection) && empty($device)) {
         $table->data[] = array(
             $device,
             $screenshotcell,
-            $OUTPUT->render($select)
+            $headingthemename . $OUTPUT->render($select)
         );
     }
 } else {

@@ -765,6 +765,9 @@ abstract class webservice_zend_server extends webservice_server {
         //log the web service request
         add_to_log(SITEID, 'webservice', '', '' , $this->zend_class." ".getremoteaddr() , 0, $this->userid);
 
+        //send headers
+        $this->send_headers();
+
         // execute and return response, this sends some headers too
         $response = $this->zend_server->handle();
 
@@ -772,7 +775,6 @@ abstract class webservice_zend_server extends webservice_server {
         $this->session_cleanup();
 
         //finally send the result
-        $this->send_headers();
         echo $response;
         die;
     }
@@ -1308,7 +1310,7 @@ abstract class webservice_base_server extends webservice_server {
         }
         $rs->close();
         if (!$allowed) {
-            throw new webservice_access_exception('Access to external function not allowed');
+            throw new webservice_access_exception(get_string('accesstofunctionnotallowed', 'webservice', $this->functionname));
         }
 
         // we have all we need now

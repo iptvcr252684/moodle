@@ -54,6 +54,8 @@ class assignment_base {
     var $cm;
     /** @var object */
     var $course;
+    /** @var stdClass */
+    var $coursecontext;
     /** @var object */
     var $assignment;
     /** @var string */
@@ -119,6 +121,8 @@ class assignment_base {
         } else if (! $this->course = $DB->get_record('course', array('id'=>$this->cm->course))) {
             print_error('invalidid', 'assignment');
         }
+        $this->coursecontext = get_context_instance(CONTEXT_COURSE, $this->course->id);
+        $courseshortname = format_text($this->course->shortname, true, array('context' => $this->coursecontext));
 
         if ($assignment) {
             $this->assignment = $assignment;
@@ -133,7 +137,7 @@ class assignment_base {
         $this->strassignments = get_string('modulenameplural', 'assignment');
         $this->strsubmissions = get_string('submissions', 'assignment');
         $this->strlastmodified = get_string('lastmodified');
-        $this->pagetitle = strip_tags($this->course->shortname.': '.$this->strassignment.': '.format_string($this->assignment->name,true));
+        $this->pagetitle = strip_tags($courseshortname.': '.$this->strassignment.': '.format_string($this->assignment->name, true, array('context' => $this->context)));
 
         // visibility handled by require_login() with $cm parameter
         // get current group only when really needed
@@ -1190,7 +1194,7 @@ class assignment_base {
         }
 
         /// Get all ppl that are allowed to submit assignments
-        list($esql, $params) = get_enrolled_sql($context, 'mod/assignment:view', $currentgroup);
+        list($esql, $params) = get_enrolled_sql($context, 'mod/assignment:submit', $currentgroup);
 
         if ($filter == self::FILTER_ALL) {
             $sql = "SELECT u.id FROM {user} u ".
@@ -1849,8 +1853,9 @@ class assignment_base {
      * @return string
      */
     function email_teachers_text($info) {
-        $posttext  = format_string($this->course->shortname).' -> '.$this->strassignments.' -> '.
-                     format_string($this->assignment->name)."\n";
+        $posttext  = format_string($this->course->shortname, true, array('context' => $this->coursecontext)).' -> '.
+                     $this->strassignments.' -> '.
+                     format_string($this->assignment->name, true, array('context' => $this->context))."\n";
         $posttext .= '---------------------------------------------------------------------'."\n";
         $posttext .= get_string("emailteachermail", "assignment", $info)."\n";
         $posttext .= "\n---------------------------------------------------------------------\n";
@@ -1866,9 +1871,9 @@ class assignment_base {
     function email_teachers_html($info) {
         global $CFG;
         $posthtml  = '<p><font face="sans-serif">'.
-                     '<a href="'.$CFG->wwwroot.'/course/view.php?id='.$this->course->id.'">'.format_string($this->course->shortname).'</a> ->'.
+                     '<a href="'.$CFG->wwwroot.'/course/view.php?id='.$this->course->id.'">'.format_string($this->course->shortname, true, array('context' => $this->coursecontext)).'</a> ->'.
                      '<a href="'.$CFG->wwwroot.'/mod/assignment/index.php?id='.$this->course->id.'">'.$this->strassignments.'</a> ->'.
-                     '<a href="'.$CFG->wwwroot.'/mod/assignment/view.php?id='.$this->cm->id.'">'.format_string($this->assignment->name).'</a></font></p>';
+                     '<a href="'.$CFG->wwwroot.'/mod/assignment/view.php?id='.$this->cm->id.'">'.format_string($this->assignment->name, true, array('context' => $this->context)).'</a></font></p>';
         $posthtml .= '<hr /><font face="sans-serif">';
         $posthtml .= '<p>'.get_string('emailteachermailhtml', 'assignment', $info).'</p>';
         $posthtml .= '</font><hr />';
@@ -1913,16 +1918,20 @@ class assignment_base {
                 $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$this->context->id.'/mod_assignment/submission/'.$submission->id.'/'.$filename);
                 $output .= '<a href="'.$path.'" ><img src="'.$OUTPUT->pix_url(file_mimetype_icon($mimetype)).'" class="icon" alt="'.$mimetype.'" />'.s($filename).'</a>';
                 if ($CFG->enableportfolios && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
-                    $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'fileid' => $file->get_id()), '/mod/assignment/locallib.php');
+                    $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'submissionid' => $submission->id, 'fileid' => $file->get_id()), '/mod/assignment/locallib.php');
                     $button->set_format_by_file($file);
                     $output .= $button->to_html(PORTFOLIO_ADD_ICON_LINK);
                 }
-                $output .= plagiarism_get_links(array('userid'=>$userid, 'file'=>$file, 'cmid'=>$this->cm->id, 'course'=>$this->course, 'assignment'=>$this->assignment));
-                $output .= '<br />';
+
+                if ($CFG->enableplagiarism) {
+                    require_once($CFG->libdir.'/plagiarismlib.php');
+                    $output .= plagiarism_get_links(array('userid'=>$userid, 'file'=>$file, 'cmid'=>$this->cm->id, 'course'=>$this->course, 'assignment'=>$this->assignment));
+                    $output .= '<br />';
+                }
             }
             if ($CFG->enableportfolios && count($files) > 1  && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
-                $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id), '/mod/assignment/locallib.php');
-                $output .= '<br />'  . $button->to_html();
+                $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'submissionid' => $submission->id), '/mod/assignment/locallib.php');
+                $output .= '<br />'  . $button->to_html(PORTFOLIO_ADD_TEXT_LINK);
             }
         }
 
@@ -2070,11 +2079,10 @@ class assignment_base {
      * when printing this activity in a course listing.  See get_array_of_activities() in course/lib.php.
      *
      * @param $coursemodule object The coursemodule object (record).
-     * @return object An object on information that the courses will know about (most noticeably, an icon).
-     *
+     * @return cached_cm_info Object used to customise appearance on course page
      */
     function get_coursemodule_info($coursemodule) {
-        return false;
+        return null;
     }
 
     /**
@@ -2469,7 +2477,7 @@ function assignment_delete_instance($id){
 function assignment_update_instance($assignment){
     global $CFG;
 
-    $assignment->assignmenttype = clean_param($assignment->assignmenttype, PARAM_SAFEDIR);
+    $assignment->assignmenttype = clean_param($assignment->assignmenttype, PARAM_PLUGIN);
 
     require_once("$CFG->dirroot/mod/assignment/type/$assignment->assignmenttype/assignment.class.php");
     $assignmentclass = "assignment_$assignment->assignmenttype";
@@ -2486,7 +2494,7 @@ function assignment_update_instance($assignment){
 function assignment_add_instance($assignment) {
     global $CFG;
 
-    $assignment->assignmenttype = clean_param($assignment->assignmenttype, PARAM_SAFEDIR);
+    $assignment->assignmenttype = clean_param($assignment->assignmenttype, PARAM_PLUGIN);
 
     require_once("$CFG->dirroot/mod/assignment/type/$assignment->assignmenttype/assignment.class.php");
     $assignmentclass = "assignment_$assignment->assignmenttype";
@@ -2590,8 +2598,10 @@ function assignment_cron () {
             /// mail is customised for the receiver.
             cron_setup_user($user, $course);
 
-            if (!is_enrolled(get_context_instance(CONTEXT_COURSE, $submission->course), $user->id)) {
-                echo fullname($user)." not an active participant in " . format_string($course->shortname) . "\n";
+            $coursecontext = get_context_instance(CONTEXT_COURSE, $submission->course);
+            $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));
+            if (!is_enrolled($coursecontext, $user->id)) {
+                echo fullname($user)." not an active participant in " . $courseshortname . "\n";
                 continue;
             }
 
@@ -2617,15 +2627,15 @@ function assignment_cron () {
             $assignmentinfo->assignment = format_string($submission->name,true);
             $assignmentinfo->url = "$CFG->wwwroot/mod/assignment/view.php?id=$mod->id";
 
-            $postsubject = "$course->shortname: $strassignments: ".format_string($submission->name,true);
-            $posttext  = "$course->shortname -> $strassignments -> ".format_string($submission->name,true)."\n";
+            $postsubject = "$courseshortname: $strassignments: ".format_string($submission->name,true);
+            $posttext  = "$courseshortname -> $strassignments -> ".format_string($submission->name,true)."\n";
             $posttext .= "---------------------------------------------------------------------\n";
             $posttext .= get_string("assignmentmail", "assignment", $assignmentinfo)."\n";
             $posttext .= "---------------------------------------------------------------------\n";
 
             if ($user->mailformat == 1) {  // HTML
                 $posthtml = "<p><font face=\"sans-serif\">".
-                "<a href=\"$CFG->wwwroot/course/view.php?id=$course->id\">$course->shortname</a> ->".
+                "<a href=\"$CFG->wwwroot/course/view.php?id=$course->id\">$courseshortname</a> ->".
                 "<a href=\"$CFG->wwwroot/mod/assignment/index.php?id=$course->id\">$strassignments</a> ->".
                 "<a href=\"$CFG->wwwroot/mod/assignment/view.php?id=$mod->id\">".format_string($submission->name,true)."</a></font></p>";
                 $posthtml .= "<hr /><font face=\"sans-serif\">";
@@ -3341,13 +3351,13 @@ function assignment_get_all_submissions($assignment, $sort="", $dir="DESC") {
  * when printing this activity in a course listing.  See get_array_of_activities() in course/lib.php.
  *
  * @param $coursemodule object The coursemodule object (record).
- * @return object An object on information that the courses will know about (most noticeably, an icon).
- *
+ * @return cached_cm_info An object on information that the courses will know about (most noticeably, an icon).
  */
 function assignment_get_coursemodule_info($coursemodule) {
     global $CFG, $DB;
 
-    if (! $assignment = $DB->get_record('assignment', array('id'=>$coursemodule->instance), 'id, assignmenttype, name')) {
+    if (! $assignment = $DB->get_record('assignment', array('id'=>$coursemodule->instance),
+            'id, assignmenttype, name, intro, introformat')) {
         return false;
     }
 
@@ -3357,14 +3367,15 @@ function assignment_get_coursemodule_info($coursemodule) {
         require_once($libfile);
         $assignmentclass = "assignment_$assignment->assignmenttype";
         $ass = new $assignmentclass('staticonly');
-        if ($result = $ass->get_coursemodule_info($coursemodule)) {
-            return $result;
-        } else {
-            $info = new stdClass();
-            $info->name = $assignment->name;
-            return $info;
+        if (!($result = $ass->get_coursemodule_info($coursemodule))) {
+            $result = new cached_cm_info();
+            $result->name = $assignment->name;
         }
-
+        if ($coursemodule->showdescription) {
+            // Convert intro to html. Do not filter cached version, filters run at display time.
+            $info->content = format_module_intro('assignment', $assignment, $coursemodule->id, false);
+        }
+        return $result;
     } else {
         debugging('Incorrect assignment type: '.$assignment->assignmenttype);
         return false;
@@ -3669,6 +3680,7 @@ function assignment_supports($feature) {
         case FEATURE_GRADE_OUTCOMES:          return true;
         case FEATURE_GRADE_HAS_GRADE:         return true;
         case FEATURE_BACKUP_MOODLE2:          return true;
+        case FEATURE_SHOW_DESCRIPTION:        return true;
 
         default: return null;
     }
@@ -3722,7 +3734,7 @@ function assignment_extend_settings_navigation(settings_navigation $settings, na
 function assignment_pack_files($filesforzipping) {
         global $CFG;
         //create path for new zip file.
-        $tempzip = tempnam($CFG->dataroot.'/temp/', 'assignment_');
+        $tempzip = tempnam($CFG->tempdir.'/', 'assignment_');
         //zip files
         $zipper = new zip_packer();
         if ($zipper->archive_to_pathname($filesforzipping, $tempzip)) {

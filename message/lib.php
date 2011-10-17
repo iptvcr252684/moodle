@@ -487,10 +487,11 @@ function message_print_usergroup_selector($viewing, $courses, $coursecontexts, $
         foreach($courses as $course) {
             if (has_capability('moodle/course:viewparticipants', $coursecontexts[$course->id])) {
                 //Not using short_text() as we want the end of the course name. Not the beginning.
-                if ($textlib->strlen($course->shortname) > MESSAGE_MAX_COURSE_NAME_LENGTH) {
-                    $courses_options[MESSAGE_VIEW_COURSE.$course->id] = '...'.$textlib->substr($course->shortname, -MESSAGE_MAX_COURSE_NAME_LENGTH);
+                $shortname = format_string($course->shortname, true, array('context' => $coursecontexts[$course->id]));
+                if ($textlib->strlen($shortname) > MESSAGE_MAX_COURSE_NAME_LENGTH) {
+                    $courses_options[MESSAGE_VIEW_COURSE.$course->id] = '...'.$textlib->substr($shortname, -MESSAGE_MAX_COURSE_NAME_LENGTH);
                 } else {
-                    $courses_options[MESSAGE_VIEW_COURSE.$course->id] = $course->shortname;
+                    $courses_options[MESSAGE_VIEW_COURSE.$course->id] = $shortname;
                 }
             }
         }
@@ -1944,9 +1945,15 @@ function message_format_message($message, $format='', $keywords='', $class='othe
 
     //if supplied display small messages as fullmessage may contain boilerplate text that shouldnt appear in the messaging UI
     if (!empty($message->smallmessage)) {
-        $messagetext = format_text(s($message->smallmessage), FORMAT_MOODLE, $options);
+        $messagetext = $message->smallmessage;
     } else {
-        $messagetext = format_text(s($message->fullmessage), $message->fullmessageformat, $options);
+        $messagetext = $message->fullmessage;
+    }
+    if ($message->fullmessageformat == FORMAT_HTML) {
+        //dont escape html tags by calling s() if html format or they will display in the UI
+        $messagetext = html_to_text(format_text($messagetext, $message->fullmessageformat, $options));
+    } else {
+        $messagetext = format_text(s($messagetext), $message->fullmessageformat, $options);
     }
 
     $messagetext .= message_format_contexturl($message);
@@ -2015,7 +2022,7 @@ function message_post_message($userfrom, $userto, $message, $format) {
     $eventdata->smallmessage     = $message;//store the message unfiltered. Clean up on output.
 
     $s = new stdClass();
-    $s->sitename = $SITE->shortname;
+    $s->sitename = format_string($SITE->shortname, true, array('context' => get_context_instance(CONTEXT_COURSE, SITEID)));
     $s->url = $CFG->wwwroot.'/message/index.php?user='.$userto->id.'&id='.$userfrom->id;
 
     $emailtagline = get_string_manager()->get_string('emailtagline', 'message', $s, $userto->lang);
@@ -2302,6 +2309,34 @@ function get_message_processors($ready = false) {
 }
 
 /**
+ * Get an instance of the message_output class for one of the output plugins.
+ * @param string $type the message output type. E.g. 'email' or 'jabber'.
+ * @return message_output message_output the requested class.
+ */
+function get_message_processor($type) {
+    global $CFG;
+
+    // Note, we cannot use the get_message_processors function here, becaues this
+    // code is called during install after installing each messaging plugin, and
+    // get_message_processors caches the list of installed plugins.
+
+    $processorfile = $CFG->dirroot . "/message/output/{$type}/message_output_{$type}.php";
+    if (!is_readable($processorfile)) {
+        throw new coding_exception('Unknown message processor type ' . $type);
+    }
+
+    include_once($processorfile);
+
+    $processclass = 'message_output_' . $type;
+    if (!class_exists($processclass)) {
+        throw new coding_exception('Message processor ' . $type .
+                ' does not define the right class');
+    }
+
+    return new $processclass();
+}
+
+/**
  * Get messaging outputs default (site) preferences
  *
  * @return object $processors object containing information on message processors
@@ -2338,11 +2373,8 @@ function translate_message_default_setting($plugindefault, $processorname) {
     );
 
     // define the default setting
-    if ($processorname == 'email') {
-        $default = MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF;
-    } else {
-        $default = MESSAGE_PERMITTED;
-    }
+    $processor = get_message_processor($processorname);
+    $default = $processor->get_default_messaging_settings();
 
     // Validate the value. It should not exceed the maximum size
     if (!is_int($plugindefault) || ($plugindefault > 0x0f)) {

@@ -134,8 +134,8 @@ class repository_coursefiles extends repository {
         $fileitemid = clean_param($params['itemid'], PARAM_INT);
         $filename = clean_param($params['filename'], PARAM_FILE);
         $filepath = clean_param($params['filepath'], PARAM_PATH);;
-        $filearea = clean_param($params['filearea'], PARAM_ALPHAEXT);
-        $component = clean_param($params['component'], PARAM_ALPHAEXT);
+        $filearea = clean_param($params['filearea'], PARAM_AREA);
+        $component = clean_param($params['component'], PARAM_COMPONENT);
         $context = get_context_instance_by_id($contextid);
 
         $file_info = $browser->get_file_info($context, $component, $filearea, $fileitemid, $filepath, $filename);
@@ -160,7 +160,7 @@ class repository_coursefiles extends repository {
     public function get_name() {
         list($context, $course, $cm) = get_context_info_array($this->context->id);
         if (!empty($course)) {
-            return get_string('courselegacyfiles') . $course->shortname;
+            return get_string('courselegacyfiles') . format_string($course->shortname, true, array('context' => get_course_context($context)));
         } else {
             return get_string('courselegacyfiles');
         }

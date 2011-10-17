@@ -81,15 +81,17 @@ $strscorm  = get_string('modulename', 'scorm');
 $strpopup = get_string('popup', 'scorm');
 $strexit = get_string('exitactivity', 'scorm');
 
+$coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
 
 if ($displaymode == 'popup') {
     $PAGE->set_pagelayout('popup');
 } else {
-    $pagetitle = strip_tags("$course->shortname: ".format_string($scorm->name));
+    $shortname = format_string($course->shortname, true, array('context' => $coursecontext));
+    $pagetitle = strip_tags("$shortname: ".format_string($scorm->name));
     $PAGE->set_title($pagetitle);
     $PAGE->set_heading($course->fullname);
 }
-if (!$cm->visible and !has_capability('moodle/course:viewhiddenactivities', get_context_instance(CONTEXT_COURSE, $course->id))) {
+if (!$cm->visible and !has_capability('moodle/course:viewhiddenactivities', $coursecontext)) {
     echo $OUTPUT->header();
     notice(get_string("activityiscurrentlyhidden"));
     echo $OUTPUT->footer();
@@ -171,6 +173,7 @@ if (empty($scorm->popup) || $displaymode=='popup') {
     $PAGE->set_button($exitlink);
 }
 
+$PAGE->requires->yui2_lib('connection');
 $PAGE->requires->data_for_js('scormplayerdata', Array('cwidth'=>$scorm->width,
                                                       'cheight'=>$scorm->height,
                                                       'popupoptions' => $scorm->options), true);

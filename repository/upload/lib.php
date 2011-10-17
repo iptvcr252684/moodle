@@ -44,7 +44,7 @@ class repository_upload extends repository {
     public function upload($saveas_filename, $maxbytes) {
         global $USER, $CFG;
 
-        $types = optional_param('accepted_types', '*', PARAM_RAW);
+        $types = optional_param_array('accepted_types', '*', PARAM_RAW);
         if ((is_array($types) and in_array('*', $types)) or $types == '*') {
             $this->mimetypes = '*';
         } else {
@@ -101,6 +101,13 @@ class repository_upload extends repository {
                 throw new moodle_exception('nofile');
             }
         }
+
+        // scan the files, throws exception and deletes if virus found
+        // this is tricky because clamdscan daemon might not be able to access the files
+        $permissions = fileperms($_FILES[$elname]['tmp_name']);
+        @chmod($_FILES[$elname]['tmp_name'], $CFG->filepermissions);
+        self::antivir_scan_file($_FILES[$elname]['tmp_name'], $_FILES[$elname]['name'], true);
+        @chmod($_FILES[$elname]['tmp_name'], $permissions);
 
         if (empty($saveas_filename)) {
             $record->filename = clean_param($_FILES[$elname]['name'], PARAM_FILE);

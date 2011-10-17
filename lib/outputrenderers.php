@@ -202,16 +202,38 @@ class plugin_renderer_base extends renderer_base {
  * @since     Moodle 2.0
  */
 class core_renderer extends renderer_base {
-    /** @var string used in {@link header()}. */
-    const PERFORMANCE_INFO_TOKEN = '%%PERFORMANCEINFO%%';
-    /** @var string used in {@link header()}. */
-    const END_HTML_TOKEN = '%%ENDHTML%%';
-    /** @var string used in {@link header()}. */
+    /**
+     * Do NOT use, please use <?php echo $OUTPUT->main_content() ?>
+     * in layout files instead.
+     * @var string used in {@link header()}.
+     * @deprecated
+     */
     const MAIN_CONTENT_TOKEN = '[MAIN CONTENT GOES HERE]';
     /** @var string used to pass information from {@link doctype()} to {@link standard_head_html()}. */
     protected $contenttype;
     /** @var string used by {@link redirect_message()} method to communicate with {@link header()}. */
     protected $metarefreshtag = '';
+    /** @var string unique token */
+    protected $unique_end_html_token;
+    /** @var string unique token */
+    protected $unique_performance_info_token;
+    /** @var string unique token */
+    protected $unique_main_content_token;
+
+    /**
+     * Constructor
+     * @param moodle_page $page the page we are doing output for.
+     * @param string $target one of rendering target constants
+     */
+    public function __construct(moodle_page $page, $target) {
+        $this->opencontainers = $page->opencontainers;
+        $this->page = $page;
+        $this->target = $target;
+
+        $this->unique_end_html_token = '%%ENDHTML-'.sesskey().'%%';
+        $this->unique_performance_info_token = '%%PERFORMANCEINFO-'.sesskey().'%%';
+        $this->unique_main_content_token = '[MAIN CONTENT GOES HERE - '.sesskey().']';
+    }
 
     /**
      * Get the DOCTYPE declaration that should be used with this page. Designed to
@@ -355,7 +377,7 @@ class core_renderer extends renderer_base {
         // This function is normally called from a layout.php file in {@link header()}
         // but some of the content won't be known until later, so we return a placeholder
         // for now. This will be replaced with the real content in {@link footer()}.
-        $output = self::PERFORMANCE_INFO_TOKEN;
+        $output = $this->unique_performance_info_token;
         if ($this->page->devicetypeinuse == 'legacy') {
             // The legacy theme is in use print the notification
             $output .= html_writer::tag('div', get_string('legacythemeinuse'), array('class'=>'legacythemeinuse'));
@@ -372,7 +394,7 @@ class core_renderer extends renderer_base {
             if (function_exists('profiling_is_running') && profiling_is_running()) {
                 $txt = get_string('profiledscript', 'admin');
                 $title = get_string('profiledscriptview', 'admin');
-                $url = $CFG->wwwroot . '/admin/report/profiling/index.php?script=' . urlencode($SCRIPT);
+                $url = $CFG->wwwroot . '/admin/tool/profiling/index.php?script=' . urlencode($SCRIPT);
                 $link= '<a title="' . $title . '" href="' . $url . '">' . $txt . '</a>';
                 $output .= '<div class="profilingfooter">' . $link . '</div>';
             }
@@ -392,6 +414,15 @@ class core_renderer extends renderer_base {
     }
 
     /**
+     * Returns standard main content placeholder.
+     * Designed to be called in theme layout.php files.
+     * @return string HTML fragment.
+     */
+    public function main_content() {
+        return $this->unique_main_content_token;
+    }
+
+    /**
      * The standard tags (typically script tags that are not needed earlier) that
      * should be output after everything else, . Designed to be called in theme layout.php files.
      * @return string HTML fragment.
@@ -400,7 +431,7 @@ class core_renderer extends renderer_base {
         // This function is normally called from a layout.php file in {@link header()}
         // but some of the content won't be known until later, so we return a placeholder
         // for now. This will be replaced with the real content in {@link footer()}.
-        return self::END_HTML_TOKEN;
+        return $this->unique_end_html_token;
     }
 
     /**
@@ -514,7 +545,7 @@ class core_renderer extends renderer_base {
 
         } else {
             return '<div class="homelink"><a href="' . $CFG->wwwroot . '/course/view.php?id=' . $this->page->course->id . '">' .
-                    format_string($this->page->course->shortname) . '</a></div>';
+                    format_string($this->page->course->shortname, true, array('context' => $this->page->context)) . '</a></div>';
         }
     }
 
@@ -606,13 +637,19 @@ class core_renderer extends renderer_base {
         $rendered = $this->render_page_layout($layoutfile);
 
         // Slice the rendered output into header and footer.
-        $cutpos = strpos($rendered, self::MAIN_CONTENT_TOKEN);
+        $cutpos = strpos($rendered, $this->unique_main_content_token);
         if ($cutpos === false) {
-            throw new coding_exception('page layout file ' . $layoutfile .
-                    ' does not contain the string "' . self::MAIN_CONTENT_TOKEN . '".');
+            $cutpos = strpos($rendered, self::MAIN_CONTENT_TOKEN);
+            $token = self::MAIN_CONTENT_TOKEN;
+        } else {
+            $token = $this->unique_main_content_token;
+        }
+
+        if ($cutpos === false) {
+            throw new coding_exception('page layout file ' . $layoutfile . ' does not contain the main content placeholder, please include "<?php echo $OUTPUT->main_content() ?>" in theme layout file.');
         }
         $header = substr($rendered, 0, $cutpos);
-        $footer = substr($rendered, $cutpos + strlen(self::MAIN_CONTENT_TOKEN));
+        $footer = substr($rendered, $cutpos + strlen($token));
 
         if (empty($this->contenttype)) {
             debugging('The page layout file did not call $OUTPUT->doctype()');
@@ -677,9 +714,9 @@ class core_renderer extends renderer_base {
                 $performanceinfo = $perf['html'];
             }
         }
-        $footer = str_replace(self::PERFORMANCE_INFO_TOKEN, $performanceinfo, $footer);
+        $footer = str_replace($this->unique_performance_info_token, $performanceinfo, $footer);
 
-        $footer = str_replace(self::END_HTML_TOKEN, $this->page->requires->get_end_code(), $footer);
+        $footer = str_replace($this->unique_end_html_token, $this->page->requires->get_end_code(), $footer);
 
         $this->page->set_state(moodle_page::STATE_DONE);
 
@@ -967,10 +1004,16 @@ class core_renderer extends renderer_base {
     protected function render_action_link(action_link $link) {
         global $CFG;
 
+        if ($link->text instanceof renderable) {
+            $text = $this->render($link->text);
+        } else {
+            $text = $link->text;
+        }
+
         // A disabled link is rendered as formatted text
         if (!empty($link->attributes['disabled'])) {
             // do not use div here due to nesting restriction in xhtml strict
-            return html_writer::tag('span', $link->text, array('class'=>'currentlink'));
+            return html_writer::tag('span', $text, array('class'=>'currentlink'));
         }
 
         $attributes = $link->attributes;
@@ -989,7 +1032,7 @@ class core_renderer extends renderer_base {
             }
         }
 
-        return html_writer::tag('a', $link->text, $attributes);
+        return html_writer::tag('a', $text, $attributes);
     }
 
 
@@ -1758,32 +1801,20 @@ class core_renderer extends renderer_base {
         }
 
         if (empty($userpicture->size)) {
-            $file = 'f2';
             $size = 35;
         } else if ($userpicture->size === true or $userpicture->size == 1) {
-            $file = 'f1';
             $size = 100;
-        } else if ($userpicture->size >= 50) {
-            $file = 'f1';
-            $size = $userpicture->size;
         } else {
-            $file = 'f2';
             $size = $userpicture->size;
         }
 
         $class = $userpicture->class;
 
-        if ($user->picture == 1) {
-            $usercontext = get_context_instance(CONTEXT_USER, $user->id);
-            $src = moodle_url::make_pluginfile_url($usercontext->id, 'user', 'icon', NULL, '/', $file);
-
-        } else if ($user->picture == 2) {
-            //TODO: gravatar user icon support
-
-        } else { // Print default user pictures (use theme version if available)
+        if ($user->picture != 1 && $user->picture != 2) {
             $class .= ' defaultuserpic';
-            $src = $this->pix_url('u/' . $file);
         }
+
+        $src = $userpicture->get_url($this->page, $this);
 
         $attributes = array('src'=>$src, 'alt'=>$alt, 'title'=>$alt, 'class'=>$class, 'width'=>$size, 'height'=>$size);
 
@@ -2035,6 +2066,10 @@ EOD;
         $message = '<p class="errormessage">' . $message . '</p>'.
                 '<p class="errorcode"><a href="' . $moreinfourl . '">' .
                 get_string('moreinformation') . '</a></p>';
+        if (empty($CFG->rolesactive)) {
+            $message .= '<p class="errormessage">' . get_string('installproblem', 'error') . '</p>';
+            //It is usually not possible to recover from errors triggered during installation, you may need to create a new database or use a different database prefix for new installation.
+        }
         $output .= $this->box($message, 'errorbox');
 
         if (debugging('', DEBUG_DEVELOPER)) {
@@ -2051,7 +2086,9 @@ EOD;
             }
         }
 
-        if (!empty($link)) {
+        if (empty($CFG->rolesactive)) {
+            // continue does not make much sense if moodle is not installed yet because error is most probably not recoverable
+        } else if (!empty($link)) {
             $output .= $this->continue_button($link);
         }
 

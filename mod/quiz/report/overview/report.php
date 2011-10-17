@@ -116,6 +116,12 @@ class quiz_overview_report extends quiz_attempt_report {
             $allowed = array();
         }
 
+        $coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
+        $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));
+
+        $displaycoursecontext = get_context_instance(CONTEXT_COURSE, $COURSE->id);
+        $displaycourseshortname = format_string($COURSE->shortname, true, array('context' => $displaycoursecontext));
+
         // Load the required questions.
         $questions = quiz_report_get_significant_questions($quiz);
 
@@ -123,9 +129,9 @@ class quiz_overview_report extends quiz_attempt_report {
                 $groupstudents, $students, $detailedmarks, $questions, $candelete,
                 $reporturl, $displayoptions);
         $filename = quiz_report_download_filename(get_string('overviewfilename', 'quiz_overview'),
-                $course->shortname, $quiz->name);
+                $courseshortname, $quiz->name);
         $table->is_downloading($download, $filename,
-                $COURSE->shortname . ' ' . format_string($quiz->name, true));
+                $displaycourseshortname . ' ' . format_string($quiz->name, true));
         if ($table->is_downloading()) {
             raise_memory_limit(MEMORY_EXTRA);
         }
@@ -133,14 +139,14 @@ class quiz_overview_report extends quiz_attempt_report {
         // Process actions.
         if (empty($currentgroup) || $groupstudents) {
             if (optional_param('delete', 0, PARAM_BOOL) && confirm_sesskey()) {
-                if ($attemptids = optional_param('attemptid', array(), PARAM_INT)) {
+                if ($attemptids = optional_param_array('attemptid', array(), PARAM_INT)) {
                     require_capability('mod/quiz:deleteattempts', $this->context);
                     $this->delete_selected_attempts($quiz, $cm, $attemptids, $allowed);
                     redirect($reporturl->out(false, $displayoptions));
                 }
 
             } else if (optional_param('regrade', 0, PARAM_BOOL) && confirm_sesskey()) {
-                if ($attemptids = optional_param('attemptid', array(), PARAM_INT)) {
+                if ($attemptids = optional_param_array('attemptid', array(), PARAM_INT)) {
                     require_capability('mod/quiz:regrade', $this->context);
                     $this->regrade_attempts($quiz, false, $groupstudents, $attemptids);
                     redirect($reporturl->out(false, $displayoptions));

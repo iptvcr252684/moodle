@@ -6,7 +6,7 @@
 
     $id         = required_param('id', PARAM_INT);                 // Course Module ID
     $action     = optional_param('action', '', PARAM_ALPHA);
-    $attemptids = optional_param('attemptid', array(), PARAM_INT); // array of attempt ids for delete action
+    $attemptids = optional_param_array('attemptid', array(), PARAM_INT); // array of attempt ids for delete action
 
     $url = new moodle_url('/mod/choice/view.php', array('id'=>$id));
     if ($action !== '') {
@@ -144,10 +144,13 @@
             $SESSION->wantsurl = $FULLME;
             $SESSION->enrolcancel = (!empty($_SERVER['HTTP_REFERER'])) ? $_SERVER['HTTP_REFERER'] : '';
 
+            $coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
+            $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));
+
             echo $OUTPUT->box_start('generalbox', 'notice');
             echo '<p align="center">'. get_string('notenrolledchoose', 'choice') .'</p>';
             echo $OUTPUT->container_start('continuebutton');
-            echo $OUTPUT->single_button(new moodle_url('/enrol/index.php?', array('id'=>$course->id)), get_string('enrolme', 'core_enrol', format_string($course->shortname)));
+            echo $OUTPUT->single_button(new moodle_url('/enrol/index.php?', array('id'=>$course->id)), get_string('enrolme', 'core_enrol', $courseshortname));
             echo $OUTPUT->container_end();
             echo $OUTPUT->box_end();
 

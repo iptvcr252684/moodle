@@ -940,6 +940,7 @@ function scorm_supports($feature) {
         case FEATURE_GRADE_HAS_GRADE:         return true;
         case FEATURE_GRADE_OUTCOMES:          return true;
         case FEATURE_BACKUP_MOODLE2:          return true;
+        case FEATURE_SHOW_DESCRIPTION:        return true;
 
         default: return null;
     }
@@ -975,7 +976,7 @@ function scorm_extend_navigation($navigation, $course, $module, $cm) {
 function scorm_debug_log_filename($type, $scoid) {
     global $CFG, $USER;
 
-    $logpath = $CFG->dataroot.'/temp/scormlogs';
+    $logpath = $CFG->tempdir.'/scormlogs';
     $logfile = $logpath.'/'.$type.'debug_'.$USER->id.'_'.$scoid.'.log';
     return $logfile;
 }
@@ -993,7 +994,7 @@ function scorm_debug_log_write($type, $text, $scoid) {
     if (!$debugenablelog || empty($text)) {
         return;
     }
-    if (make_upload_directory('temp/scormlogs/')) {
+    if (make_temp_directory('scormlogs/')) {
         $logfile = scorm_debug_log_filename($type, $scoid);
         @file_put_contents($logfile, date('Y/m/d H:i:s O')." DEBUG $text\r\n", FILE_APPEND);
     }

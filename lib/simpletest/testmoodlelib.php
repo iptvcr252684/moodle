@@ -318,15 +318,344 @@ class moodlelib_test extends UnitTestCase {
     }
 
     function test_optional_param() {
+        global $CFG;
+
         $_POST['username'] = 'post_user';
         $_GET['username'] = 'get_user';
-        $this->assertEqual(optional_param('username', 'default_user', PARAM_RAW), 'post_user');
+        $this->assertIdentical(optional_param('username', 'default_user', PARAM_RAW), $_POST['username']);
 
         unset($_POST['username']);
-        $this->assertEqual(optional_param('username', 'default_user', PARAM_RAW), 'get_user');
+        $this->assertIdentical(optional_param('username', 'default_user', PARAM_RAW), $_GET['username']);
 
         unset($_GET['username']);
-        $this->assertEqual(optional_param('username', 'default_user', PARAM_RAW), 'default_user');
+        $this->assertIdentical(optional_param('username', 'default_user', PARAM_RAW), 'default_user');
+
+        // make sure exception is triggered when some params are missing, hide error notices here - new in 2.2
+        $_POST['username'] = 'post_user';
+        try {
+            optional_param('username', 'default_user', null);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @optional_param('username', 'default_user');
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @optional_param('username');
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            optional_param('', 'default_user', PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // make sure warning is displayed if array submitted - TODO: throw exception in Moodle 2.3
+        $debugging = isset($CFG->debug) ? $CFG->debug : null;
+        $debugdisplay = isset($CFG->debugdisplay) ? $CFG->debugdisplay : null;
+        $CFG->debug = 38911;
+        $CFG->debugdisplay = true;
+
+        ob_start();
+        $this->assertIdentical(optional_param('username', 'default_user', PARAM_RAW), $_POST['username']);
+        $d = ob_end_clean();
+        $this->assertTrue($d !== '');
+
+        if ($debugging !== null) {
+            $CFG->debug = $debugging;
+        } else {
+            unset($CFG->debug);
+        }
+        if ($debugdisplay !== null) {
+            $CFG->debugdisplay = $debugdisplay;
+        } else {
+            unset($CFG->debugdisplay);
+        }
+    }
+
+    function test_optional_param_array() {
+        global $CFG;
+
+        $_POST['username'] = array('a'=>'post_user');
+        $_GET['username'] = array('a'=>'get_user');
+        $this->assertIdentical(optional_param_array('username', array('a'=>'default_user'), PARAM_RAW), $_POST['username']);
+
+        unset($_POST['username']);
+        $this->assertIdentical(optional_param_array('username', array('a'=>'default_user'), PARAM_RAW), $_GET['username']);
+
+        unset($_GET['username']);
+        $this->assertIdentical(optional_param_array('username', array('a'=>'default_user'), PARAM_RAW), array('a'=>'default_user'));
+
+        // make sure exception is triggered when some params are missing, hide error notices here - new in 2.2
+        $_POST['username'] = array('a'=>'post_user');
+        try {
+            optional_param_array('username', array('a'=>'default_user'), null);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @optional_param_array('username', array('a'=>'default_user'));
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @optional_param_array('username');
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            optional_param_array('', array('a'=>'default_user'), PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // do not allow nested arrays
+        try {
+            $_POST['username'] = array('a'=>array('b'=>'post_user'));
+            optional_param_array('username', array('a'=>'default_user'), PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // do not allow non-arrays
+        $debugging = isset($CFG->debug) ? $CFG->debug : null;
+        $debugdisplay = isset($CFG->debugdisplay) ? $CFG->debugdisplay : null;
+        $CFG->debug = 38911;
+        $CFG->debugdisplay = true;
+
+        ob_start();
+        $_POST['username'] = 'post_user';
+        $this->assertIdentical(optional_param_array('username', array('a'=>'default_user'), PARAM_RAW), array('a'=>'default_user'));
+        $d = ob_end_clean();
+        $this->assertTrue($d !== '');
+
+        // make sure array keys are sanitised
+        ob_start();
+        $_POST['username'] = array('abc123_;-/*-+ '=>'arrggh', 'a1_-'=>'post_user');
+        $this->assertIdentical(optional_param_array('username', array(), PARAM_RAW), array('a1_-'=>'post_user'));
+        $d = ob_end_clean();
+        $this->assertTrue($d !== '');
+
+        if ($debugging !== null) {
+            $CFG->debug = $debugging;
+        } else {
+            unset($CFG->debug);
+        }
+        if ($debugdisplay !== null) {
+            $CFG->debugdisplay = $debugdisplay;
+        } else {
+            unset($CFG->debugdisplay);
+        }
+    }
+
+    function test_required_param() {
+        global $CFG;
+
+        $_POST['username'] = 'post_user';
+        $_GET['username'] = 'get_user';
+        $this->assertIdentical(required_param('username', PARAM_RAW), 'post_user');
+
+        unset($_POST['username']);
+        $this->assertIdentical(required_param('username', PARAM_RAW), 'get_user');
+
+        unset($_GET['username']);
+        try {
+            $this->assertIdentical(required_param('username', PARAM_RAW), 'default_user');
+            $this->fail('moodle_exception expected');
+        } catch (moodle_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // make sure exception is triggered when some params are missing, hide error notices here - new in 2.2
+        $_POST['username'] = 'post_user';
+        try {
+            @required_param('username');
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            required_param('username', '');
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            required_param('', PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // make sure warning is displayed if array submitted - TODO: throw exception in Moodle 2.3
+        $debugging = isset($CFG->debug) ? $CFG->debug : null;
+        $debugdisplay = isset($CFG->debugdisplay) ? $CFG->debugdisplay : null;
+        $CFG->debug = 38911;
+        $CFG->debugdisplay = true;
+
+        ob_start();
+        $this->assertIdentical(required_param('username', PARAM_RAW), $_POST['username']);
+        $d = ob_end_clean();
+        $this->assertTrue($d !== '');
+
+        if ($debugging !== null) {
+            $CFG->debug = $debugging;
+        } else {
+            unset($CFG->debug);
+        }
+        if ($debugdisplay !== null) {
+            $CFG->debugdisplay = $debugdisplay;
+        } else {
+            unset($CFG->debugdisplay);
+        }
+    }
+
+    function test_required_param_array() {
+        global $CFG;
+
+        $_POST['username'] = array('a'=>'post_user');
+        $_GET['username'] = array('a'=>'get_user');
+        $this->assertIdentical(required_param_array('username', PARAM_RAW), $_POST['username']);
+
+        unset($_POST['username']);
+        $this->assertIdentical(required_param_array('username', PARAM_RAW), $_GET['username']);
+
+        // make sure exception is triggered when some params are missing, hide error notices here - new in 2.2
+        $_POST['username'] = array('a'=>'post_user');
+        try {
+            required_param_array('username', null);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @required_param_array('username');
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            required_param_array('', PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // do not allow nested arrays
+        try {
+            $_POST['username'] = array('a'=>array('b'=>'post_user'));
+            required_param_array('username', PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // do not allow non-arrays
+        try {
+            $_POST['username'] = 'post_user';
+            required_param_array('username', PARAM_RAW);
+            $this->fail('moodle_exception expected');
+        } catch (moodle_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // do not allow non-arrays
+        $debugging = isset($CFG->debug) ? $CFG->debug : null;
+        $debugdisplay = isset($CFG->debugdisplay) ? $CFG->debugdisplay : null;
+        $CFG->debug = 38911;
+        $CFG->debugdisplay = true;
+
+        // make sure array keys are sanitised
+        ob_start();
+        $_POST['username'] = array('abc123_;-/*-+ '=>'arrggh', 'a1_-'=>'post_user');
+        $this->assertIdentical(required_param_array('username', PARAM_RAW), array('a1_-'=>'post_user'));
+        $d = ob_end_clean();
+        $this->assertTrue($d !== '');
+
+        if ($debugging !== null) {
+            $CFG->debug = $debugging;
+        } else {
+            unset($CFG->debug);
+        }
+        if ($debugdisplay !== null) {
+            $CFG->debugdisplay = $debugdisplay;
+        } else {
+            unset($CFG->debugdisplay);
+        }
+    }
+
+    function test_clean_param() {
+        // forbid objects and arrays
+        try {
+            clean_param(array('x', 'y'), PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            $param = new stdClass();
+            $param->id = 1;
+            clean_param($param, PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // require correct type
+        try {
+            clean_param('x', 'xxxxxx');
+            $this->fail('moodle_exception expected');
+        } catch (moodle_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @clean_param('x');
+            $this->fail('moodle_exception expected');
+        } catch (moodle_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+    }
+
+    function test_clean_param_array() {
+        $this->assertIdentical(clean_param_array(null, PARAM_RAW), array());
+        $this->assertIdentical(clean_param_array(array('a', 'b'), PARAM_RAW), array('a', 'b'));
+        $this->assertIdentical(clean_param_array(array('a', array('b')), PARAM_RAW, true), array('a', array('b')));
+
+        // require correct type
+        try {
+            clean_param_array(array('x'), 'xxxxxx');
+            $this->fail('moodle_exception expected');
+        } catch (moodle_exception $ex) {
+            $this->assertTrue(true);
+        }
+        try {
+            @clean_param_array(array('x'));
+            $this->fail('moodle_exception expected');
+        } catch (moodle_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        try {
+            clean_param_array(array('x', array('y')), PARAM_RAW);
+            $this->fail('coding_exception expected');
+        } catch (coding_exception $ex) {
+            $this->assertTrue(true);
+        }
+
+        // test recursive
     }
 
     function test_clean_param_raw() {
@@ -362,6 +691,62 @@ class moodlelib_test extends UnitTestCase {
     function test_clean_param_sequence() {
         $this->assertEqual(clean_param('#()*#,9789\'".,<42897></?$(*DSFMO#$*)(SDJ)($*)', PARAM_SEQUENCE),
                 ',9789,42897');
+    }
+
+    function test_clean_param_component() {
+        // please note the cleaning of component names is very strict, no guessing here
+        $this->assertIdentical(clean_param('mod_forum', PARAM_COMPONENT), 'mod_forum');
+        $this->assertIdentical(clean_param('block_online_users', PARAM_COMPONENT), 'block_online_users');
+        $this->assertIdentical(clean_param('block_blond_online_users', PARAM_COMPONENT), 'block_blond_online_users');
+        $this->assertIdentical(clean_param('mod_something2', PARAM_COMPONENT), 'mod_something2');
+        $this->assertIdentical(clean_param('forum', PARAM_COMPONENT), 'forum');
+        $this->assertIdentical(clean_param('user', PARAM_COMPONENT), 'user');
+        $this->assertIdentical(clean_param('rating', PARAM_COMPONENT), 'rating');
+        $this->assertIdentical(clean_param('mod_2something', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('2mod_something', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('mod_something_xx', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('auth_something__xx', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('mod_Something', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('mod_somethíng', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('auth_xx-yy', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('_auth_xx', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('a2uth_xx', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('auth_xx_', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('auth_xx.old', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('_user', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('2rating', PARAM_COMPONENT), '');
+        $this->assertIdentical(clean_param('user_', PARAM_COMPONENT), '');
+    }
+
+    function test_clean_param_plugin() {
+        // please note the cleaning of plugin names is very strict, no guessing here
+        $this->assertIdentical(clean_param('forum', PARAM_PLUGIN), 'forum');
+        $this->assertIdentical(clean_param('forum2', PARAM_PLUGIN), 'forum2');
+        $this->assertIdentical(clean_param('online_users', PARAM_PLUGIN), 'online_users');
+        $this->assertIdentical(clean_param('blond_online_users', PARAM_PLUGIN), 'blond_online_users');
+        $this->assertIdentical(clean_param('online__users', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('forum ', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('forum.old', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('xx-yy', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('2xx', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('Xx', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('_xx', PARAM_PLUGIN), '');
+        $this->assertIdentical(clean_param('xx_', PARAM_PLUGIN), '');
+    }
+
+    function test_clean_param_area() {
+        // please note the cleaning of area names is very strict, no guessing here
+        $this->assertIdentical(clean_param('something', PARAM_AREA), 'something');
+        $this->assertIdentical(clean_param('something2', PARAM_AREA), 'something2');
+        $this->assertIdentical(clean_param('some_thing', PARAM_AREA), 'some_thing');
+        $this->assertIdentical(clean_param('some_thing_xx', PARAM_AREA), 'some_thing_xx');
+        $this->assertIdentical(clean_param('_something', PARAM_AREA), '');
+        $this->assertIdentical(clean_param('something_', PARAM_AREA), '');
+        $this->assertIdentical(clean_param('2something', PARAM_AREA), '');
+        $this->assertIdentical(clean_param('Something', PARAM_AREA), '');
+        $this->assertIdentical(clean_param('some-thing', PARAM_AREA), '');
+        $this->assertIdentical(clean_param('somethííng', PARAM_AREA), '');
+        $this->assertIdentical(clean_param('something.x', PARAM_AREA), '');
     }
 
     function test_clean_param_text() {

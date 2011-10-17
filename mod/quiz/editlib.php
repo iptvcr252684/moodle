@@ -405,6 +405,8 @@ function quiz_print_question_list($quiz, $pageurl, $allowdelete, $reordertool,
 
     $a = '<input name="moveselectedonpagetop" type="text" size="2" ' .
         $pagingdisabled . ' />';
+    $b = '<input name="moveselectedonpagebottom" type="text" size="2" ' .
+        $pagingdisabled . ' />';
 
     $reordercontrols2top = '<div class="moveselectedonpage">' .
         get_string('moveselectedonpage', 'quiz', $a) .
@@ -415,7 +417,7 @@ function quiz_print_question_list($quiz, $pageurl, $allowdelete, $reordertool,
     $reordercontrols2bottom = '<div class="moveselectedonpage">' .
         '<input type="submit" name="savechanges" value="' .
         $strreorderquestions . '" /><br />' .
-        get_string('moveselectedonpage', 'quiz', $a) .
+        get_string('moveselectedonpage', 'quiz', $b) .
         '<input type="submit" name="savechanges" value="' .
         $strmove . '"  ' . $pagingdisabled . ' /> ' . '</div>';
 
@@ -1187,7 +1189,7 @@ class quiz_question_bank_view extends question_bank_view {
         echo '<form method="get" action="edit.php" id="displayoptions">';
         echo "<fieldset class='invisiblefieldset'>";
         echo html_writer::input_hidden_params($this->baseurl,
-                array('recurse', 'showhidden', 'showquestiontext'));
+                array('recurse', 'showhidden', 'qbshowtext'));
         $this->display_category_form_checkbox('recurse', $recurse,
                 get_string('includesubcategories', 'question'));
         $this->display_category_form_checkbox('showhidden', $showhidden,
@@ -1270,7 +1272,7 @@ function quiz_print_status_bar($quiz) {
     // Brief summary on the page.
     if ($timenow < $quiz->timeopen) {
         $currentstatus = get_string('quizisclosedwillopen', 'quiz',
-                userdate($quiz->timeclose, get_string('strftimedatetimeshort', 'langconfig')));
+                userdate($quiz->timeopen, get_string('strftimedatetimeshort', 'langconfig')));
     } else if ($quiz->timeclose && $timenow <= $quiz->timeclose) {
         $currentstatus = get_string('quizisopenwillclose', 'quiz',
                 userdate($quiz->timeclose, get_string('strftimedatetimeshort', 'langconfig')));
