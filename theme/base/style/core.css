@@ -667,6 +667,7 @@ body.tag .managelink {padding: 5px;}
 .dir-rtl .loginbox .loginform .form-input {text-align: right;}
 .dir-rtl .yui3-menu-hidden {left: 0px;}
 #page-admin-roles-define.dir-rtl #rolesform .felement {margin-right: 180px;}
+#page-message-edit.dir-rtl table.generaltable th.c0 {text-align: right;}
 
 /**
  * Backup
