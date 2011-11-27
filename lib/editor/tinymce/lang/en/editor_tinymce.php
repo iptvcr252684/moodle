@@ -804,3 +804,12 @@ $string['xhtmlxtras_dlg:title_acronym_element'] = 'Acronym Element';
 $string['xhtmlxtras_dlg:title_cite_element'] = 'Citation Element';
 $string['xhtmlxtras_dlg:title_del_element'] = 'Deletion Element';
 $string['xhtmlxtras_dlg:title_ins_element'] = 'Insertion Element';
+
+$string['videocapture:title'] = 'Video Recorder';
+$string['videocapture:recorder'] = 'Recorder';
+$string['videocapture:whendone'] = 'When done';
+$string['videocapture:play'] = 'Play';
+$string['videocapture:record'] = 'Record';
+$string['videocapture:pause'] = 'Pause';
+$string['videocapture:stop'] = 'Stop';
+$string['videocapture:status'] = 'Status';
