@@ -136,6 +136,7 @@ class filter_manager {
             return new $filterclassname($context, $localconfig);
         }
 
+        // TODO: deprecated since 2.2, will be out in 2.3, see MDL-29996
         $legacyfunctionname = basename($filtername) . '_filter';
         if (function_exists($legacyfunctionname)) {
             return new legacy_filter($legacyfunctionname, $context, $localconfig);
@@ -370,6 +371,8 @@ abstract class moodle_text_filter {
  * moodle_text_filter implementation that encapsulates an old-style filter that
  * only defines a function, not a class.
  *
+ * @deprecated since 2.2, see MDL-29995
+ * @todo will be out in 2.3, see MDL-29996
  * @package    core
  * @subpackage filter
  * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
@@ -475,6 +478,7 @@ class filterobject {
  * @return string the human-readable name for this filter.
  */
 function filter_get_name($filter) {
+    // TODO: should we be using pluginname here instead? , see MDL-29998
     list($type, $filter) = explode('/', $filter);
     switch ($type) {
         case 'filter':
@@ -485,6 +489,7 @@ function filter_get_name($filter) {
             }
             // Fall through to try the legacy location.
 
+        // TODO: deprecated since 2.2, will be out in 2.3, see MDL-29996
         case 'mod':
             $strfiltername = get_string('filtername', $filter);
             if (substr($strfiltername, 0, 2) == '[[') {
@@ -508,10 +513,16 @@ function filter_get_name($filter) {
 function filter_get_all_installed() {
     global $CFG;
     $filternames = array();
+    // TODO: deprecated since 2.2, will be out in 2.3, see MDL-29996
     $filterlocations = array('mod', 'filter');
     foreach ($filterlocations as $filterlocation) {
+        // TODO: move get_list_of_plugins() to get_plugin_list()
         $filters = get_list_of_plugins($filterlocation);
         foreach ($filters as $filter) {
+            // MDL-29994 - Ignore mod/data and mod/glossary filters forever, this will be out in 2.3
+            if ($filterlocation == 'mod' && ($filter == 'data' || $filter == 'glossary')) {
+                continue;
+            }
             $path = $filterlocation . '/' . $filter;
             if (is_readable($CFG->dirroot . '/' . $path . '/filter.php')) {
                 $strfiltername = filter_get_name($path);

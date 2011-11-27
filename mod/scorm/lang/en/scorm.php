@@ -23,7 +23,10 @@
  */
 $string['toc'] = 'TOC';
 $string['navigation'] = 'Navigation';
-
+$string['aicchacptimeout'] = 'AICC HACP Timeout';
+$string['aicchacptimeout_desc'] = 'Length of time in minutes that an external AICC HACP session can remain open';
+$string['aicchacpkeepsessiondata'] = 'AICC HACP session data';
+$string['aicchacpkeepsessiondata_desc'] = 'Length of time in days to keep the external AICC HACP session data (a high setting will fill up the table with old data but may be useful when debugging)';
 $string['activation'] = 'Activation';
 $string['activityloading'] = 'You will be automatically redirected to the activity in';
 $string['activitypleasewait'] = 'Activity loading, please wait ...';
@@ -31,14 +34,18 @@ $string['adminsettings'] = 'Admin settings';
 $string['advanced'] = 'Parameters';
 $string['allowapidebug'] = 'Activate API debug and tracing (set the capture mask with apidebugmask)';
 $string['allowtypeexternal'] = 'Enable external package type';
+$string['allowtypeexternalaicc'] = 'Enable direct AICC url';
+$string['allowtypeexternalaicc_desc'] = 'If enabled this allows a direct url to a simple AICC package';
 $string['allowtypeimsrepository'] = 'Enable IMS package type';
 $string['allowtypelocalsync'] = 'Enable downloaded package type';
+$string['allowtypeaicchacp'] = 'Enable external AICC HACP';
+$string['allowtypeaicchacp_desc'] = 'If enabled this allows AICC HACP external communication without requiring user login for post requests from the external AICC package';
 $string['apidebugmask'] = 'API debug capture mask  - use a simple regex on &lt;username&gt;:&lt;activityname&gt; e.g. admin:.* will debug for admin user only';
 $string['areacontent'] = 'Content files';
 $string['areapackage'] = 'Package file';
 $string['asset'] = 'Asset';
 $string['assetlaunched'] = 'Asset - Viewed';
-$string['attempt'] = 'attempt';
+$string['attempt'] = 'Attempt';
 $string['attempts'] = 'Attempts';
 $string['attemptsx'] = '{$a} attempts';
 $string['attempt1'] = '1 attempt';
@@ -161,6 +168,8 @@ $string['interactionstype'] = 'Type of question';
 $string['interactionsweight'] = 'Weight assigned to the element';
 $string['interactionslearnerresponse'] = 'Learner\'s Response';
 $string['invalidactivity'] = 'Scorm activity is incorrect';
+$string['invalidurl'] = 'Invalid URL specified';
+$string['invalidhacpsession'] = 'Invalid HACP Session';
 $string['invalidmanifestresource'] = 'WARNING: The following resources were referenced in your manifest but couldn\'t be found:';
 $string['last'] = 'Last accessed on';
 $string['lastaccess'] = 'Last access';
@@ -259,7 +268,8 @@ $string['scormtype_help'] = 'This setting determines how the package is included
 * Uploaded package - Enables a SCORM package to be chosen via the file picker
 * External SCORM manifest - Enables an imsmanifest.xml URL to be specified. Note: If the URL has a different domain name than your site, then "Downloaded package" is a better option, since otherwise grades are not saved.
 * Downloaded package - Enables a package URL to be specified. The package will be unzipped and saved locally, and updated when the external SCORM package is updated.
-* Local IMS content repository - Enables a package to be selected from within an IMS repository';
+* Local IMS content repository - Enables a package to be selected from within an IMS repository
+* External AICC URL - this URL is the launch URL for a single AICC Activity.  A psuedo package will be constructed around this.';
 $string['scorm:viewreport'] = 'View reports';
 $string['scorm:viewscores'] = 'View scores';
 $string['scrollbars'] = 'Allow the window to be scrolled';
@@ -291,6 +301,7 @@ $string['too_many_children'] = 'Tag {$a->tag} has too many children';
 $string['totaltime'] = 'Time';
 $string['trackingloose'] = 'WARNING: The tracking data of this package will be lost!';
 $string['type'] = 'Type';
+$string['typeaiccurl'] = 'External AICC URL';
 $string['typeexternal'] = 'External SCORM manifest';
 $string['typeimsrepository'] = 'Local IMS content repository';
 $string['typelocal'] = 'Uploaded package';

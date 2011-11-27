@@ -19,8 +19,7 @@
  *
  * @package    tool
  * @subpackage unittest
- * @copyright 2009 David Mudrak <david.mudrak@gmail.com>
- * @author     N.D.Freear@open.ac.uk, T.J.Hunt@open.ac.uk
+ * @copyright  2009 David Mudrak <david.mudrak@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -82,7 +81,7 @@ if ($getpdf) {
 
     $c  = '<h3>General information</h3>';
     $c .= 'Moodle release: '            . $CFG->release . '<br />';
-    $c .= 'PDF producer: '              . PDF_PRODUCER  . '<br />';
+    $c .= 'PDF producer: TCPDF '        . $doc->getTCPDFVersion()  . ' (http://www.tcpdf.org) <br />';
     $c .= 'Font of this test page: '    . $fontfamily   . '<br />';
 
     $c .= '<h3>Current settings</h3>';
@@ -105,10 +104,10 @@ if ($getpdf) {
     $c .= '<h3>Installed languages and their alphabets</h3>';
     $languages = array();
     $langdirs = get_list_of_plugins('lang', '', $CFG->dataroot);
-    array_unshift($langdirs, 'Moodle core English');
+    array_unshift($langdirs, 'en');
     foreach ($langdirs as $langdir) {
-        if ('Moodle core English' == $langdir) {
-            $langconfig = $CFG->dirroot . '/lang/en_utf8/langconfig.php';
+        if ('en' == $langdir) {
+            $langconfig = $CFG->dirroot . '/lang/en/langconfig.php';
         } else {
             $langconfig = $CFG->dataroot . '/lang/' . $langdir . '/langconfig.php';
         }
@@ -124,7 +123,7 @@ if ($getpdf) {
     $c .= '<dl>';
     foreach ($languages as $langcode => $language) {
         $c .= '<dt>' . $language->langname . ' (' . $langcode . ')</dt>';
-        $c .= '<dd>' . $language->alphabet . '</dd>';
+        $c .= '<dd>"' . $language->alphabet . '"</dd>';
     }
     $c .= '</dl>';
 

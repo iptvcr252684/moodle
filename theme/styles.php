@@ -24,6 +24,10 @@
  */
 
 
+// disable moodle specific debug messages and any errors in output,
+// comment out when debugging or better look into error log!
+define('NO_DEBUG_DISPLAY', true);
+
 // we need just the values from config.php and minlib.php
 define('ABORT_AFTER_CONFIG', true);
 require('../config.php'); // this stops immediately at the beginning of lib/setup.php
@@ -113,6 +117,9 @@ send_cached_css($candidatesheet, $rev);
 
 function store_css(theme_config $theme, $csspath, $cssfiles) {
     $css = $theme->post_process(minify($cssfiles));
+    // note: cache reset might have purged our cache dir structure,
+    //       make sure we do not use stale file stat cache in the next check_dir_exists()
+    clearstatcache();
     check_dir_exists(dirname($csspath));
     $fp = fopen($csspath, 'w');
     fwrite($fp, $css);

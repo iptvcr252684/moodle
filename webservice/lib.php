@@ -165,7 +165,7 @@ class webservice {
     }
 
     /**
-     * Return all ws user token
+     * Return all ws user token with ws enabled/disabled and ws restricted users mode.
      * @param integer $userid
      * @return array of token
      */
@@ -173,7 +173,7 @@ class webservice {
         global $DB;
         //here retrieve token list (including linked users firstname/lastname and linked services name)
         $sql = "SELECT
-                    t.id, t.creatorid, t.token, u.firstname, u.lastname, s.name, t.validuntil
+                    t.id, t.creatorid, t.token, u.firstname, u.lastname, s.id as wsid, s.name, s.enabled, s.restrictedusers, t.validuntil
                 FROM
                     {external_tokens} t, {user} u, {external_services} s
                 WHERE
@@ -645,7 +645,7 @@ abstract class webservice_server implements webservice_server_interface {
                 throw new webservice_access_exception(get_string('wrongusernamepassword', 'webservice'));
             }
 
-            $user = $DB->get_record('user', array('username'=>$this->username, 'mnethostid'=>$CFG->mnet_localhost_id, 'deleted'=>0), '*', MUST_EXIST);
+            $user = $DB->get_record('user', array('username'=>$this->username, 'mnethostid'=>$CFG->mnet_localhost_id), '*', MUST_EXIST);
 
         } else if ($this->authmethod == WEBSERVICE_AUTHMETHOD_PERMANENT_TOKEN){
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_PERMANENT);
@@ -653,12 +653,57 @@ abstract class webservice_server implements webservice_server_interface {
             $user = $this->authenticate_by_token(EXTERNAL_TOKEN_EMBEDDED);
         }
 
+        //Non admin can not authenticate if maintenance mode
+        $hassiteconfig = has_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM), $user);
+        if (!empty($CFG->maintenance_enabled) and !$hassiteconfig) {
+            throw new webservice_access_exception(get_string('sitemaintenance', 'admin'));
+        }
+
+        //only confirmed user should be able to call web service
+        if (!empty($user->deleted)) {
+            add_to_log(SITEID, '', '', '', get_string('wsaccessuserdeleted', 'webservice', $user->username) . " - ".getremoteaddr(), 0, $user->id);
+            throw new webservice_access_exception(get_string('wsaccessuserdeleted', 'webservice', $user->username));
+        }
+
+        //only confirmed user should be able to call web service
+        if (empty($user->confirmed)) {
+            add_to_log(SITEID, '', '', '', get_string('wsaccessuserunconfirmed', 'webservice', $user->username) . " - ".getremoteaddr(), 0, $user->id);
+            throw new webservice_access_exception(get_string('wsaccessuserunconfirmed', 'webservice', $user->username));
+        }
+
+        //check the user is suspended
+        if (!empty($user->suspended)) {
+            add_to_log(SITEID, '', '', '', get_string('wsaccessusersuspended', 'webservice', $user->username) . " - ".getremoteaddr(), 0, $user->id);
+            throw new webservice_access_exception(get_string('wsaccessusersuspended', 'webservice', $user->username));
+        }
+
+        //retrieve the authentication plugin if no previously done
+        if (empty($auth)) {
+          $auth  = get_auth_plugin($user->auth);
+        }
+
+        // check if credentials have expired
+        if (!empty($auth->config->expiration) and $auth->config->expiration == 1) {
+            $days2expire = $auth->password_expire($user->username);
+            if (intval($days2expire) < 0 ) {
+                add_to_log(SITEID, '', '', '', get_string('wsaccessuserexpired', 'webservice', $user->username) . " - ".getremoteaddr(), 0, $user->id);
+                throw new webservice_access_exception(get_string('wsaccessuserexpired', 'webservice', $user->username));
+            }
+        }
+
+        //check if the auth method is nologin (in this case refuse connection)
+        if ($user->auth=='nologin') {
+            add_to_log(SITEID, '', '', '', get_string('wsaccessusernologin', 'webservice', $user->username) . " - ".getremoteaddr(), 0, $user->id);
+            throw new webservice_access_exception(get_string('wsaccessusernologin', 'webservice', $user->username));
+        }
+
         // now fake user login, the session is completely empty too
+        enrol_check_plugins($user);
         session_set_user($user);
         $this->userid = $user->id;
 
         if ($this->authmethod != WEBSERVICE_AUTHMETHOD_SESSION_TOKEN && !has_capability("webservice/$this->wsname:use", $this->restricted_context)) {
-            throw new webservice_access_exception(get_string('accessnotallowed', 'webservice'));
+            throw new webservice_access_exception(get_string('protocolnotallowed', 'webservice', $this->wsname));
         }
 
         external_api::set_context_restriction($this->restricted_context);
@@ -693,7 +738,7 @@ abstract class webservice_server implements webservice_server_interface {
         $this->restricted_context = get_context_instance_by_id($token->contextid);
         $this->restricted_serviceid = $token->externalserviceid;
 
-        $user = $DB->get_record('user', array('id'=>$token->userid, 'deleted'=>0), '*', MUST_EXIST);
+        $user = $DB->get_record('user', array('id'=>$token->userid), '*', MUST_EXIST);
 
         // log token access
         $DB->set_field('external_tokens', 'lastaccess', time(), array('id'=>$token->id));

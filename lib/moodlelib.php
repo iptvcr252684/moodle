@@ -376,6 +376,8 @@ define ('PASSWORD_NONALPHANUM', '.,;:!?_-+/*@#&$');
 define('FEATURE_GRADE_HAS_GRADE', 'grade_has_grade');
 /** True if module supports outcomes */
 define('FEATURE_GRADE_OUTCOMES', 'outcomes');
+/** True if module supports advanced grading methods */
+define('FEATURE_ADVANCED_GRADING', 'grade_advanced_grading');
 
 /** True if module has code to track whether somebody viewed it */
 define('FEATURE_COMPLETION_TRACKS_VIEWS', 'completion_tracks_views');
@@ -1435,8 +1437,6 @@ function purge_all_caches() {
     // hack: this script may get called after the purifier was initialised,
     // but we do not want to verify repeatedly this exists in each call
     make_cache_directory('htmlpurifier');
-
-    clearstatcache();
 }
 
 /**
@@ -2758,13 +2758,6 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
             }
         }
 
-        // very simple enrolment caching - changes in course setting are not reflected immediately
-        if (!isset($USER->enrol)) {
-            $USER->enrol = array();
-            $USER->enrol['enrolled'] = array();
-            $USER->enrol['tempguest'] = array();
-        }
-
         $access = false;
 
         if (is_viewing($coursecontext, $USER)) {
@@ -2773,10 +2766,12 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
 
         } else {
             if (isset($USER->enrol['enrolled'][$course->id])) {
-                if ($USER->enrol['enrolled'][$course->id] == 0) {
+                if ($USER->enrol['enrolled'][$course->id] > time()) {
                     $access = true;
-                } else if ($USER->enrol['enrolled'][$course->id] > time()) {
-                    $access = true;
+                    if (isset($USER->enrol['tempguest'][$course->id])) {
+                        unset($USER->enrol['tempguest'][$course->id]);
+                        remove_temp_course_roles($coursecontext);
+                    }
                 } else {
                     //expired
                     unset($USER->enrol['enrolled'][$course->id]);
@@ -2790,64 +2785,54 @@ function require_login($courseorid = NULL, $autologinguest = true, $cm = NULL, $
                 } else {
                     //expired
                     unset($USER->enrol['tempguest'][$course->id]);
-                    $USER->access = remove_temp_roles($coursecontext, $USER->access);
+                    remove_temp_course_roles($coursecontext);
                 }
             }
 
             if ($access) {
                 // cache ok
-            } else if (is_enrolled($coursecontext, $USER, '', true)) {
-                // active participants may always access
-                // TODO: refactor this into some new function
-                $now = time();
-                $sql = "SELECT MAX(ue.timeend)
-                          FROM {user_enrolments} ue
-                          JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)
-                          JOIN {user} u ON u.id = ue.userid
-                         WHERE ue.userid = :userid AND ue.status = :active AND e.status = :enabled AND u.deleted = 0
-                               AND ue.timestart < :now1 AND (ue.timeend = 0 OR ue.timeend > :now2)";
-                $params = array('enabled'=>ENROL_INSTANCE_ENABLED, 'active'=>ENROL_USER_ACTIVE,
-                                'userid'=>$USER->id, 'courseid'=>$coursecontext->instanceid, 'now1'=>$now, 'now2'=>$now);
-                $until = $DB->get_field_sql($sql, $params);
-                if (!$until or $until > time() + ENROL_REQUIRE_LOGIN_CACHE_PERIOD) {
-                    $until = time() + ENROL_REQUIRE_LOGIN_CACHE_PERIOD;
-                }
-
-                $USER->enrol['enrolled'][$course->id] = $until;
-                $access = true;
-
-                // remove traces of previous temp guest access
-                $USER->access = remove_temp_roles($coursecontext, $USER->access);
-
             } else {
-                $instances = $DB->get_records('enrol', array('courseid'=>$course->id, 'status'=>ENROL_INSTANCE_ENABLED), 'sortorder, id ASC');
-                $enrols = enrol_get_plugins(true);
-                // first ask all enabled enrol instances in course if they want to auto enrol user
-                foreach($instances as $instance) {
-                    if (!isset($enrols[$instance->enrol])) {
-                        continue;
+                $until = enrol_get_enrolment_end($coursecontext->instanceid, $USER->id);
+                if ($until !== false) {
+                    // active participants may always access, a timestamp in the future, 0 (always) or false.
+                    if ($until == 0) {
+                        $until = ENROL_MAX_TIMESTAMP;
                     }
-                    // Get a duration for the guestaccess, a timestamp in the future or false.
-                    $until = $enrols[$instance->enrol]->try_autoenrol($instance);
-                    if ($until !== false) {
-                        $USER->enrol['enrolled'][$course->id] = $until;
-                        $USER->access = remove_temp_roles($coursecontext, $USER->access);
-                        $access = true;
-                        break;
-                    }
-                }
-                // if not enrolled yet try to gain temporary guest access
-                if (!$access) {
+                    $USER->enrol['enrolled'][$course->id] = $until;
+                    $access = true;
+
+                } else {
+                    $instances = $DB->get_records('enrol', array('courseid'=>$course->id, 'status'=>ENROL_INSTANCE_ENABLED), 'sortorder, id ASC');
+                    $enrols = enrol_get_plugins(true);
+                    // first ask all enabled enrol instances in course if they want to auto enrol user
                     foreach($instances as $instance) {
                         if (!isset($enrols[$instance->enrol])) {
                             continue;
                         }
-                        // Get a duration for the guestaccess, a timestamp in the future or false.
-                        $until = $enrols[$instance->enrol]->try_guestaccess($instance);
+                        // Get a duration for the enrolment, a timestamp in the future, 0 (always) or false.
+                        $until = $enrols[$instance->enrol]->try_autoenrol($instance);
                         if ($until !== false) {
-                            $USER->enrol['tempguest'][$course->id] = $until;
+                            if ($until == 0) {
+                                $until = ENROL_MAX_TIMESTAMP;
+                            }
+                            $USER->enrol['enrolled'][$course->id] = $until;
                             $access = true;
                             break;
+                        }
+                    }
+                    // if not enrolled yet try to gain temporary guest access
+                    if (!$access) {
+                        foreach($instances as $instance) {
+                            if (!isset($enrols[$instance->enrol])) {
+                                continue;
+                            }
+                            // Get a duration for the guest access, a timestamp in the future or false.
+                            $until = $enrols[$instance->enrol]->try_guestaccess($instance);
+                            if ($until !== false and $until > time()) {
+                                $USER->enrol['tempguest'][$course->id] = $until;
+                                $access = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -3031,6 +3016,7 @@ function require_user_key_login($script, $instance=null) {
     }
 
 /// emulate normal session
+    enrol_check_plugins($user);
     session_set_user($user);
 
 /// note we are not using normal login
@@ -3351,6 +3337,88 @@ function fullname($user, $override=false) {
     }
 
     return get_string('fullnamedisplay', '', $user);
+}
+
+/**
+ * Checks if current user is shown any extra fields when listing users.
+ * @param object $context Context
+ * @param array $already Array of fields that we're going to show anyway
+ *   so don't bother listing them
+ * @return array Array of field names from user table, not including anything
+ *   listed in $already
+ */
+function get_extra_user_fields($context, $already = array()) {
+    global $CFG;
+
+    // Only users with permission get the extra fields
+    if (!has_capability('moodle/site:viewuseridentity', $context)) {
+        return array();
+    }
+
+    // Split showuseridentity on comma
+    if ($CFG->showuseridentity === '') {
+        // Explode gives wrong result with empty string
+        $extra = array();
+    } else {
+        $extra =  explode(',', $CFG->showuseridentity);
+    }
+    $renumber = false;
+    foreach ($extra as $key => $field) {
+        if (in_array($field, $already)) {
+            unset($extra[$key]);
+            $renumber = true;
+        }
+    }
+    if ($renumber) {
+        // For consistency, if entries are removed from array, renumber it
+        // so they are numbered as you would expect
+        $extra = array_merge($extra);
+    }
+    return $extra;
+}
+
+/**
+ * If the current user is to be shown extra user fields when listing or
+ * selecting users, returns a string suitable for including in an SQL select
+ * clause to retrieve those fields.
+ * @param object $context Context
+ * @param string $alias Alias of user table, e.g. 'u' (default none)
+ * @param string $prefix Prefix for field names using AS, e.g. 'u_' (default none)
+ * @param array $already Array of fields that we're going to include anyway
+ *   so don't list them (default none)
+ * @return string Partial SQL select clause, beginning with comma, for example
+ *   ',u.idnumber,u.department' unless it is blank
+ */
+function get_extra_user_fields_sql($context, $alias='', $prefix='',
+        $already = array()) {
+    $fields = get_extra_user_fields($context, $already);
+    $result = '';
+    // Add punctuation for alias
+    if ($alias !== '') {
+        $alias .= '.';
+    }
+    foreach ($fields as $field) {
+        $result .= ', ' . $alias . $field;
+        if ($prefix) {
+            $result .= ' AS ' . $prefix . $field;
+        }
+    }
+    return $result;
+}
+
+/**
+ * Returns the display name of a field in the user table. Works for most fields
+ * that are commonly displayed to users.
+ * @param string $field Field name, e.g. 'phone1'
+ * @return string Text description taken from language file, e.g. 'Phone number'
+ */
+function get_user_field_name($field) {
+    // Some fields have language strings which are not the same as field name
+    switch ($field) {
+        case 'phone1' : return get_string('phone');
+    }
+    // Otherwise just use the same lang string
+    return get_string($field);
 }
 
 /**
@@ -3882,12 +3950,15 @@ function complete_user_login($user) {
     // this helps prevent session fixation attacks from the same domain
     session_regenerate_id(true);
 
+    // let enrol plugins deal with new enrolments if necessary
+    enrol_check_plugins($user);
+
     // check enrolments, load caps and setup $USER object
     session_set_user($user);
 
     // reload preferences from DB
-    unset($user->preference);
-    check_user_preferences_loaded($user);
+    unset($USER->preference);
+    check_user_preferences_loaded($USER);
 
     // update login times
     update_user_login_times();
@@ -4214,58 +4285,122 @@ function delete_course($courseorid, $showfeedback = true) {
  * This function does not verify any permissions.
  *
  * Please note this function also deletes all user enrolments,
- * enrolment instances and role assignments.
+ * enrolment instances and role assignments by default.
+ *
+ * $options:
+ *  - 'keep_roles_and_enrolments' - false by default
+ *  - 'keep_groups_and_groupings' - false by default
  *
  * @param int $courseid The id of the course that is being deleted
  * @param bool $showfeedback Whether to display notifications of each action the function performs.
+ * @param array $options extra options
  * @return bool true if all the removals succeeded. false if there were any failures. If this
  *             method returns false, some of the removals will probably have succeeded, and others
  *             failed, but you have no way of knowing which.
  */
-function remove_course_contents($courseid, $showfeedback = true) {
+function remove_course_contents($courseid, $showfeedback = true, array $options = null) {
     global $CFG, $DB, $OUTPUT;
     require_once($CFG->libdir.'/completionlib.php');
     require_once($CFG->libdir.'/questionlib.php');
     require_once($CFG->libdir.'/gradelib.php');
     require_once($CFG->dirroot.'/group/lib.php');
     require_once($CFG->dirroot.'/tag/coursetagslib.php');
+    require_once($CFG->dirroot.'/comment/lib.php');
+    require_once($CFG->dirroot.'/rating/lib.php');
+
+    // NOTE: these concatenated strings are suboptimal, but it is just extra info...
+    $strdeleted = get_string('deleted').' - ';
+
+    // Some crazy wishlist of stuff we should skip during purging of course content
+    $options = (array)$options;
 
     $course = $DB->get_record('course', array('id'=>$courseid), '*', MUST_EXIST);
-    $context = get_context_instance(CONTEXT_COURSE, $courseid, MUST_EXIST);
+    $coursecontext = context_course::instance($courseid);
+    $fs = get_file_storage();
 
-    $strdeleted = get_string('deleted');
-
-    // Delete course completion information,
-    // this has to be done before grades and enrols
+    // Delete course completion information, this has to be done before grades and enrols
     $cc = new completion_info($course);
     $cc->clear_criteria();
-
-    // remove roles and enrolments
-    role_unassign_all(array('contextid'=>$context->id), true);
-    enrol_course_delete($course);
-
-    // Clean up course formats (iterate through all formats in the even the course format was ever changed)
-    $formats = get_plugin_list('format');
-    foreach ($formats as $format=>$formatdir) {
-        $formatdelete = 'format_'.$format.'_delete_course';
-        $formatlib    = "$formatdir/lib.php";
-        if (file_exists($formatlib)) {
-            include_once($formatlib);
-            if (function_exists($formatdelete)) {
-                if ($showfeedback) {
-                    echo $OUTPUT->notification($strdeleted.' '.$format);
-                }
-                $formatdelete($course->id);
-            }
-        }
+    if ($showfeedback) {
+        echo $OUTPUT->notification($strdeleted.get_string('completion', 'completion'), 'notifysuccess');
     }
 
     // Remove all data from gradebook - this needs to be done before course modules
     // because while deleting this information, the system may need to reference
     // the course modules that own the grades.
     remove_course_grades($courseid, $showfeedback);
-    remove_grade_letters($context, $showfeedback);
+    remove_grade_letters($coursecontext, $showfeedback);
 
+    // Delete course blocks in any all child contexts,
+    // they may depend on modules so delete them first
+    $childcontexts = $coursecontext->get_child_contexts(); // returns all subcontexts since 2.2
+    foreach ($childcontexts as $childcontext) {
+        blocks_delete_all_for_context($childcontext->id);
+    }
+    unset($childcontexts);
+    blocks_delete_all_for_context($coursecontext->id);
+    if ($showfeedback) {
+        echo $OUTPUT->notification($strdeleted.get_string('type_block_plural', 'plugin'), 'notifysuccess');
+    }
+
+    // Delete every instance of every module,
+    // this has to be done before deleting of course level stuff
+    $locations = get_plugin_list('mod');
+    foreach ($locations as $modname=>$moddir) {
+        if ($modname === 'NEWMODULE') {
+            continue;
+        }
+        if ($module = $DB->get_record('modules', array('name'=>$modname))) {
+            include_once("$moddir/lib.php");                 // Shows php warning only if plugin defective
+            $moddelete = $modname .'_delete_instance';       // Delete everything connected to an instance
+            $moddeletecourse = $modname .'_delete_course';   // Delete other stray stuff (uncommon)
+
+            if ($instances = $DB->get_records($modname, array('course'=>$course->id))) {
+                foreach ($instances as $instance) {
+                    if ($cm = get_coursemodule_from_instance($modname, $instance->id, $course->id)) {
+                        /// Delete activity context questions and question categories
+                        question_delete_activity($cm,  $showfeedback);
+                    }
+                    if (function_exists($moddelete)) {
+                        // This purges all module data in related tables, extra user prefs, settings, etc.
+                        $moddelete($instance->id);
+                    } else {
+                        // NOTE: we should not allow installation of modules with missing delete support!
+                        debugging("Defective module '$modname' detected when deleting course contents: missing function $moddelete()!");
+                        $DB->delete_records($modname, array('id'=>$instance->id));
+                    }
+
+                    if ($cm) {
+                        // Delete cm and its context - orphaned contexts are purged in cron in case of any race condition
+                        context_helper::delete_instance(CONTEXT_MODULE, $cm->id);
+                        $DB->delete_records('course_modules', array('id'=>$cm->id));
+                    }
+                }
+            }
+            if (function_exists($moddeletecourse)) {
+                // Execute ptional course cleanup callback
+                $moddeletecourse($course, $showfeedback);
+            }
+            if ($instances and $showfeedback) {
+                echo $OUTPUT->notification($strdeleted.get_string('pluginname', $modname), 'notifysuccess');
+            }
+        } else {
+            // Ooops, this module is not properly installed, force-delete it in the next block
+        }
+    }
+    // We have tried to delete everything the nice way - now let's force-delete any remaining module data
+    $cms = $DB->get_records('course_modules', array('course'=>$course->id));
+    foreach ($cms as $cm) {
+        if ($module = $DB->get_record('module', array('id'=>$cm->module))) {
+            try {
+                $DB->delete_records($module->name, array('id'=>$cm->instance));
+            } catch (Exception $e) {
+                // Ignore weird or missing table problems
+            }
+        }
+        context_helper::delete_instance(CONTEXT_MODULE, $cm->id);
+        $DB->delete_records('course_modules', array('id'=>$cm->id));
+    }
     // Remove all data from availability and completion tables that is associated
     // with course-modules belonging to this course. Note this is done even if the
     // features are not enabled now, in case they were enabled previously
@@ -4275,101 +4410,122 @@ function remove_course_contents($courseid, $showfeedback = true) {
     $DB->delete_records_select('course_modules_availability',
            'coursemoduleid IN (SELECT id from {course_modules} WHERE course=?)',
            array($courseid));
+    if ($showfeedback) {
+        echo $OUTPUT->notification($strdeleted.get_string('type_mod_plural', 'plugin'), 'notifysuccess');
+    }
 
-    // Delete course blocks - they may depend on modules so delete them first
-    blocks_delete_all_for_context($context->id);
+    // Cleanup the rest of plugins
+    $cleanuplugintypes = array('report', 'coursereport', 'format');
+    foreach ($cleanuplugintypes as $type) {
+        $plugins = get_plugin_list_with_function($type, 'delete_course', 'lib.php');
+        foreach ($plugins as $plugin=>$pluginfunction) {
+            $pluginfunction($course->id, $showfeedback);
+        }
+        if ($showfeedback) {
+            echo $OUTPUT->notification($strdeleted.get_string('type_'.$type.'_plural', 'plugin'), 'notifysuccess');
+        }
+    }
 
-    // Delete every instance of every module
-    if ($allmods = $DB->get_records('modules') ) {
-        foreach ($allmods as $mod) {
-            $modname = $mod->name;
-            $modfile = $CFG->dirroot .'/mod/'. $modname .'/lib.php';
-            $moddelete = $modname .'_delete_instance';       // Delete everything connected to an instance
-            $moddeletecourse = $modname .'_delete_course';   // Delete other stray stuff (uncommon)
-            $count=0;
-            if (file_exists($modfile)) {
-                include_once($modfile);
-                if (function_exists($moddelete)) {
-                    if ($instances = $DB->get_records($modname, array('course'=>$course->id))) {
-                        foreach ($instances as $instance) {
-                            if ($cm = get_coursemodule_from_instance($modname, $instance->id, $course->id)) {
-                                /// Delete activity context questions and question categories
-                                question_delete_activity($cm,  $showfeedback);
-                            }
-                            if ($moddelete($instance->id)) {
-                                $count++;
+    // Delete questions and question categories
+    question_delete_course($course, $showfeedback);
+    if ($showfeedback) {
+        echo $OUTPUT->notification($strdeleted.get_string('questions', 'question'), 'notifysuccess');
+    }
 
-                            } else {
-                                echo $OUTPUT->notification('Could not delete '. $modname .' instance '. $instance->id .' ('. format_string($instance->name) .')');
-                            }
-                            if ($cm) {
-                                // delete cm and its context in correct order
-                                delete_context(CONTEXT_MODULE, $cm->id); // some callbacks may try to fetch context, better delete first
-                                $DB->delete_records('course_modules', array('id'=>$cm->id));
-                            }
-                        }
-                    }
-                } else {
-                    //note: we should probably delete these anyway
-                    echo $OUTPUT->notification('Function '.$moddelete.'() doesn\'t exist!');
-                }
+    // Make sure there are no subcontexts left - all valid blocks and modules should be already gone
+    $childcontexts = $coursecontext->get_child_contexts(); // returns all subcontexts since 2.2
+    foreach ($childcontexts as $childcontext) {
+        $childcontext->delete();
+    }
+    unset($childcontexts);
 
-                if (function_exists($moddeletecourse)) {
-                    $moddeletecourse($course, $showfeedback);
-                }
-            }
-            if ($showfeedback) {
-                echo $OUTPUT->notification($strdeleted .' '. $count .' x '. $modname);
-            }
+    // Remove all roles and enrolments by default
+    if (empty($options['keep_roles_and_enrolments'])) {
+        // this hack is used in restore when deleting contents of existing course
+        role_unassign_all(array('contextid'=>$coursecontext->id), true);
+        enrol_course_delete($course);
+        if ($showfeedback) {
+            echo $OUTPUT->notification($strdeleted.get_string('type_enrol_plural', 'plugin'), 'notifysuccess');
         }
     }
 
     // Delete any groups, removing members and grouping/course links first.
-    groups_delete_groupings($course->id, $showfeedback);
-    groups_delete_groups($course->id, $showfeedback);
+    if (empty($options['keep_groups_and_groupings'])) {
+        groups_delete_groupings($course->id, $showfeedback);
+        groups_delete_groups($course->id, $showfeedback);
+    }
 
-    // Delete questions and question categories
-    question_delete_course($course, $showfeedback);
+    // filters be gone!
+    filter_delete_all_for_context($coursecontext->id);
+
+    // die comments!
+    comment::delete_comments($coursecontext->id);
+
+    // ratings are history too
+    $delopt = new stdclass();
+    $delopt->contextid = $coursecontext->id;
+    $rm = new rating_manager();
+    $rm->delete_ratings($delopt);
 
     // Delete course tags
     coursetag_delete_course_tags($course->id, $showfeedback);
 
-    // Delete legacy files (just in case some files are still left there after conversion to new file api)
-    fulldelete($CFG->dataroot.'/'.$course->id);
+    // Delete calendar events
+    $DB->delete_records('event', array('courseid'=>$course->id));
+    $fs->delete_area_files($coursecontext->id, 'calendar');
 
-    // cleanup course record - remove links to delted stuff
-    $oldcourse = new stdClass();
-    $oldcourse->id                = $course->id;
-    $oldcourse->summary           = '';
-    $oldcourse->modinfo           = NULL;
-    $oldcourse->legacyfiles       = 0;
-    $oldcourse->defaultgroupingid = 0;
-    $oldcourse->enablecompletion  = 0;
-    $DB->update_record('course', $oldcourse);
-
-    // Delete all related records in other tables that may have a courseid
+    // Delete all related records in other core tables that may have a courseid
     // This array stores the tables that need to be cleared, as
     // table_name => column_name that contains the course id.
     $tablestoclear = array(
-        'event' => 'courseid', // Delete events
-        'log' => 'course', // Delete logs
-        'course_sections' => 'course', // Delete any course stuff
-        'course_modules' => 'course',
-        'course_display' => 'course',
-        'backup_courses' => 'courseid', // Delete scheduled backup stuff
-        'user_lastaccess' => 'courseid',
+        'log' => 'course',               // Course logs (NOTE: this might be changed in the future)
+        'backup_courses' => 'courseid',  // Scheduled backup stuff
+        'user_lastaccess' => 'courseid', // User access info
     );
     foreach ($tablestoclear as $table => $col) {
         $DB->delete_records($table, array($col=>$course->id));
     }
 
-    // Delete all remaining stuff linked to context,
-    // such as remaining roles, files, comments, etc.
-    // Keep the context record for now.
-    delete_context(CONTEXT_COURSE, $course->id, false);
+    // delete all course backup files
+    $fs->delete_area_files($coursecontext->id, 'backup');
 
-    //trigger events
-    $course->context = $context; // you can not access context in cron event later after course is deleted
+    // cleanup course record - remove links to deleted stuff
+    $oldcourse = new stdClass();
+    $oldcourse->id               = $course->id;
+    $oldcourse->summary          = '';
+    $oldcourse->modinfo          = NULL;
+    $oldcourse->legacyfiles      = 0;
+    $oldcourse->enablecompletion = 0;
+    if (!empty($options['keep_groups_and_groupings'])) {
+        $oldcourse->defaultgroupingid = 0;
+    }
+    $DB->update_record('course', $oldcourse);
+
+    // Delete course sections and user selections
+    $DB->delete_records('course_sections', array('course'=>$course->id));
+    $DB->delete_records('course_display', array('course'=>$course->id));
+
+    // delete legacy, section and any other course files
+    $fs->delete_area_files($coursecontext->id, 'course'); // files from summary and section
+
+    // Delete all remaining stuff linked to context such as files, comments, ratings, etc.
+    if (empty($options['keep_roles_and_enrolments']) and empty($options['keep_groups_and_groupings'])) {
+        // Easy, do not delete the context itself...
+        $coursecontext->delete_content();
+
+    } else {
+        // Hack alert!!!!
+        // We can not drop all context stuff because it would bork enrolments and roles,
+        // there might be also files used by enrol plugins...
+    }
+
+    // Delete legacy files - just in case some files are still left there after conversion to new file api,
+    // also some non-standard unsupported plugins may try to store something there
+    fulldelete($CFG->dataroot.'/'.$course->id);
+
+    // Finally trigger the event
+    $course->context = $coursecontext; // you can not access context in cron event later after course is deleted
+    $course->options = $options;       // not empty if we used any crazy hack
     events_trigger('course_content_removed', $course);
 
     return true;
@@ -6140,7 +6296,17 @@ class core_string_manager implements string_manager {
             }
             if (!isset($string[$identifier])) {
                 // the string is still missing - should be fixed by developer
-                debugging("Invalid get_string() identifier: '$identifier' or component '$component'", DEBUG_DEVELOPER);
+                list($plugintype, $pluginname) = normalize_component($component);
+                if ($plugintype == 'core') {
+                    $file = "lang/en/{$component}.php";
+                } else if ($plugintype == 'mod') {
+                    $file = "mod/{$pluginname}/lang/en/{$pluginname}.php";
+                } else {
+                    $path = get_plugin_directory($plugintype, $pluginname);
+                    $file = "{$path}/lang/en/{$plugintype}_{$pluginname}.php";
+                }
+                debugging("Invalid get_string() identifier: '{$identifier}' or component '{$component}'. " .
+                        "Perhaps you are missing \$string['{$identifier}'] = ''; in {$file}?", DEBUG_DEVELOPER);
                 return "[[$identifier]]";
             }
         }
@@ -6379,6 +6545,7 @@ class core_string_manager implements string_manager {
             if (!empty($CFG->langcache) and !empty($this->menucache)) {
                 // cache the list so that it can be used next time
                 collatorlib::asort($languages);
+                check_dir_exists(dirname($this->menucache), true, true);
                 file_put_contents($this->menucache, json_encode($languages));
             }
         }
@@ -6695,6 +6862,7 @@ class install_string_manager implements string_manager {
  * @return string The localized string.
  */
 function get_string($identifier, $component = '', $a = NULL) {
+    global $CFG;
 
     $identifier = clean_param($identifier, PARAM_STRINGID);
     if (empty($identifier)) {
@@ -6730,7 +6898,13 @@ function get_string($identifier, $component = '', $a = NULL) {
         }
     }
 
-    return get_string_manager()->get_string($identifier, $component, $a);
+    $result = get_string_manager()->get_string($identifier, $component, $a);
+
+    // Debugging feature lets you display string identifier and component
+    if (isset($CFG->debugstringids) && $CFG->debugstringids && optional_param('strings', 0, PARAM_INT)) {
+        $result .= ' {' . $identifier . '/' . $component . '}';
+    }
+    return $result;
 }
 
 /**
@@ -7273,6 +7447,7 @@ function get_core_subsystems() {
             'fonts'       => NULL,
             'form'        => 'lib/form',
             'grades'      => 'grade',
+            'grading'     => 'grade/grading',
             'group'       => 'group',
             'help'        => NULL,
             'hub'         => NULL,
@@ -7336,11 +7511,12 @@ function get_plugin_types($fullpaths=true) {
                       'editor'        => 'lib/editor',
                       'format'        => 'course/format',
                       'profilefield'  => 'user/profile/field',
-                      'report'        => $CFG->admin.'/report',
+                      'report'        => 'report',
                       'coursereport'  => 'course/report', // must be after system reports
                       'gradeexport'   => 'grade/export',
                       'gradeimport'   => 'grade/import',
                       'gradereport'   => 'grade/report',
+                      'gradingform'   => 'grade/grading/form',
                       'mnetservice'   => 'mnet/service',
                       'webservice'    => 'webservice',
                       'repository'    => 'repository',
@@ -7607,7 +7783,7 @@ function plugin_callback($type, $name, $feature, $action, $options = null, $defa
 
     $component = clean_param($type . '_' . $name, PARAM_COMPONENT);
     if (empty($component)) {
-        throw coding_exception('Invalid component used in plugin_callback():' . $type . '_' . $name);
+        throw new coding_exception('Invalid component used in plugin_callback():' . $type . '_' . $name);
     }
 
     list($type, $name) = normalize_component($component);
@@ -7618,7 +7794,7 @@ function plugin_callback($type, $name, $feature, $action, $options = null, $defa
 
     $dir = get_component_directory($component);
     if (empty($dir)) {
-        throw coding_exception('Invalid component used in plugin_callback():' . $type . '_' . $name);
+        throw new coding_exception('Invalid component used in plugin_callback():' . $type . '_' . $name);
     }
 
     // Load library and look for function
@@ -7665,7 +7841,7 @@ function plugin_supports($type, $name, $feature, $default = NULL) {
 
     $component = clean_param($type . '_' . $name, PARAM_COMPONENT);
     if (empty($component)) {
-        throw coding_exception('Invalid component used in plugin_supports():' . $type . '_' . $name);
+        throw new coding_exception('Invalid component used in plugin_supports():' . $type . '_' . $name);
     }
 
     $function = null;
@@ -8310,124 +8486,6 @@ function upgrade_set_timeout($max_execution_time=300) {
 /// MISCELLANEOUS ////////////////////////////////////////////////////////////////////
 
 /**
- * Notify admin users or admin user of any failed logins (since last notification).
- *
- * Note that this function must be only executed from the cron script
- * It uses the cache_flags system to store temporary records, deleting them
- * by name before finishing
- *
- * @global object
- * @global object
- * @uses HOURSECS
- */
-function notify_login_failures() {
-    global $CFG, $DB, $OUTPUT;
-
-    $recip = get_users_from_config($CFG->notifyloginfailures, 'moodle/site:config');
-
-    if (empty($CFG->lastnotifyfailure)) {
-        $CFG->lastnotifyfailure=0;
-    }
-
-    // we need to deal with the threshold stuff first.
-    if (empty($CFG->notifyloginthreshold)) {
-        $CFG->notifyloginthreshold = 10; // default to something sensible.
-    }
-
-/// Get all the IPs with more than notifyloginthreshold failures since lastnotifyfailure
-/// and insert them into the cache_flags temp table
-    $sql = "SELECT ip, COUNT(*)
-              FROM {log}
-             WHERE module = 'login' AND action = 'error'
-                   AND time > ?
-          GROUP BY ip
-            HAVING COUNT(*) >= ?";
-    $params = array($CFG->lastnotifyfailure, $CFG->notifyloginthreshold);
-    $rs = $DB->get_recordset_sql($sql, $params);
-    foreach ($rs as $iprec) {
-        if (!empty($iprec->ip)) {
-            set_cache_flag('login_failure_by_ip', $iprec->ip, '1', 0);
-        }
-    }
-    $rs->close();
-
-/// Get all the INFOs with more than notifyloginthreshold failures since lastnotifyfailure
-/// and insert them into the cache_flags temp table
-    $sql = "SELECT info, count(*)
-              FROM {log}
-             WHERE module = 'login' AND action = 'error'
-                   AND time > ?
-          GROUP BY info
-            HAVING count(*) >= ?";
-    $params = array($CFG->lastnotifyfailure, $CFG->notifyloginthreshold);
-    $rs = $DB->get_recordset_sql($sql, $params);
-    foreach ($rs as $inforec) {
-        if (!empty($inforec->info)) {
-            set_cache_flag('login_failure_by_info', $inforec->info, '1', 0);
-        }
-    }
-    $rs->close();
-
-/// Now, select all the login error logged records belonging to the ips and infos
-/// since lastnotifyfailure, that we have stored in the cache_flags table
-    $sql = "SELECT l.*, u.firstname, u.lastname
-              FROM {log} l
-              JOIN {cache_flags} cf ON l.ip = cf.name
-         LEFT JOIN {user} u         ON l.userid = u.id
-             WHERE l.module = 'login' AND l.action = 'error'
-                   AND l.time > ?
-                   AND cf.flagtype = 'login_failure_by_ip'
-        UNION ALL
-            SELECT l.*, u.firstname, u.lastname
-              FROM {log} l
-              JOIN {cache_flags} cf ON l.info = cf.name
-         LEFT JOIN {user} u         ON l.userid = u.id
-             WHERE l.module = 'login' AND l.action = 'error'
-                   AND l.time > ?
-                   AND cf.flagtype = 'login_failure_by_info'
-          ORDER BY time DESC";
-    $params = array($CFG->lastnotifyfailure, $CFG->lastnotifyfailure);
-
-/// Init some variables
-    $count = 0;
-    $messages = '';
-/// Iterate over the logs recordset
-    $rs = $DB->get_recordset_sql($sql, $params);
-    foreach ($rs as $log) {
-        $log->time = userdate($log->time);
-        $messages .= get_string('notifyloginfailuresmessage','',$log)."\n";
-        $count++;
-    }
-    $rs->close();
-
-/// If we haven't run in the last hour and
-/// we have something useful to report and we
-/// are actually supposed to be reporting to somebody
-    if ((time() - HOURSECS) > $CFG->lastnotifyfailure && $count > 0 && is_array($recip) && count($recip) > 0) {
-        $site = get_site();
-        $subject = get_string('notifyloginfailuressubject', '', format_string($site->fullname));
-    /// Calculate the complete body of notification (start + messages + end)
-        $body = get_string('notifyloginfailuresmessagestart', '', $CFG->wwwroot) .
-                (($CFG->lastnotifyfailure != 0) ? '('.userdate($CFG->lastnotifyfailure).')' : '')."\n\n" .
-                $messages .
-                "\n\n".get_string('notifyloginfailuresmessageend','',$CFG->wwwroot)."\n\n";
-
-    /// For each destination, send mail
-        mtrace('Emailing admins about '. $count .' failed login attempts');
-        foreach ($recip as $admin) {
-            //emailing the admins directly rather than putting these through the messaging system
-            email_to_user($admin,get_admin(), $subject, $body);
-        }
-
-    /// Update lastnotifyfailure with current time
-        set_config('lastnotifyfailure', time());
-    }
-
-/// Finally, delete all the temp records we have created in cache_flags
-    $DB->delete_records_select('cache_flags', "flagtype IN ('login_failure_by_ip', 'login_failure_by_info')");
-}
-
-/**
  * Sets the system locale
  *
  * @todo Finish documenting this function
@@ -8760,12 +8818,17 @@ function generate_password($maxlen=10) {
         $filler1 = $fillers[rand(0, strlen($fillers) - 1)];
         $password = $word1 . $filler1 . $word2;
     } else {
-        $maxlen = !empty($CFG->minpasswordlength) ? $CFG->minpasswordlength : 0;
+        $minlen = !empty($CFG->minpasswordlength) ? $CFG->minpasswordlength : 0;
         $digits = $CFG->minpassworddigits;
         $lower = $CFG->minpasswordlower;
         $upper = $CFG->minpasswordupper;
         $nonalphanum = $CFG->minpasswordnonalphanum;
-        $additional = $maxlen - ($lower + $upper + $digits + $nonalphanum);
+        $total = $lower + $upper + $digits + $nonalphanum;
+        // minlength should be the greater one of the two ( $minlen and $total )
+        $minlen = $minlen < $total ? $total : $minlen;
+        // maxlen can never be smaller than minlen
+        $maxlen = $minlen > $maxlen ? $minlen : $maxlen;
+        $additional = $maxlen - $total;
 
         // Make sure we have enough characters to fulfill
         // complexity requirements
@@ -9816,11 +9879,6 @@ function get_performance_info() {
     $info['html'] .= '<span class="dbqueries">DB reads/writes: '.$info['dbqueries'].'</span> ';
     $info['txt'] .= 'db reads/writes: '.$info['dbqueries'].' ';
 
-    if (!empty($PERF->profiling) && $PERF->profiling) {
-        require_once($CFG->dirroot .'/lib/profilerlib.php');
-        $info['html'] .= '<span class="profilinginfo">'.Profiler::get_profiling(array('-R')).'</span>';
-    }
-
     if (function_exists('posix_times')) {
         $ptimes = posix_times();
         if (is_array($ptimes)) {
@@ -9902,9 +9960,12 @@ function remove_dir($dir, $content_only=false) {
     }
     closedir($handle);
     if ($content_only) {
+        clearstatcache(); // make sure file stat cache is properly invalidated
         return $result;
     }
-    return rmdir($dir); // if anything left the result will be false, no need for && $result
+    $result = rmdir($dir); // if anything left the result will be false, no need for && $result
+    clearstatcache(); // make sure file stat cache is properly invalidated
+    return $result;
 }
 
 /**

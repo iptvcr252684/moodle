@@ -29,9 +29,7 @@ defined('MOODLE_INTERNAL') || die;
 require_once($CFG->libdir.'/completionlib.php');
 require_once($CFG->libdir.'/filelib.php');
 
-define('COURSE_MAX_LOG_DISPLAY', 150);          // days
 define('COURSE_MAX_LOGS_PER_PAGE', 1000);       // records
-define('COURSE_LIVELOG_REFRESH', 60);           // Seconds
 define('COURSE_MAX_RECENT_PERIOD', 172800);     // Two days, in seconds
 define('COURSE_MAX_SUMMARIES_PER_PAGE', 10);    // courses
 define('COURSE_MAX_COURSES_PER_DROPDOWN',1000); //  max courses in log dropdown before switching to optional
@@ -830,21 +828,6 @@ function print_log_ods($course, $user, $date, $order='l.time DESC', $modname,
 }
 
 
-function print_log_graph($course, $userid=0, $type="course.png", $date=0) {
-    global $CFG, $USER;
-    if (empty($CFG->gdversion)) {
-        echo "(".get_string("gdneed").")";
-    } else {
-        // MDL-10818, do not display broken graph when user has no permission to view graph
-        if (has_capability('coursereport/log:view', get_context_instance(CONTEXT_COURSE, $course->id)) ||
-            ($course->showreports and $USER->id == $userid)) {
-            echo '<img src="'.$CFG->wwwroot.'/course/report/log/graph.php?id='.$course->id.
-                 '&amp;user='.$userid.'&amp;type='.$type.'&amp;date='.$date.'" alt="" />';
-        }
-    }
-}
-
-
 function print_overview($courses, array $remote_courses=array()) {
     global $CFG, $USER, $DB, $OUTPUT;
 
@@ -1149,6 +1132,9 @@ function get_array_of_activities($courseid) {
                                if (!empty($info->extraclasses)) {
                                    $mod[$seq]->extraclasses = $info->extraclasses;
                                }
+                               if (!empty($info->iconurl)) {
+                                   $mod[$seq]->iconurl = $info->iconurl;
+                               }
                                if (!empty($info->onclick)) {
                                    $mod[$seq]->onclick = $info->onclick;
                                }
@@ -1186,7 +1172,7 @@ function get_array_of_activities($courseid) {
                    // Minimise the database size by unsetting default options when they are
                    // 'empty'. This list corresponds to code in the cm_info constructor.
                    foreach (array('idnumber', 'groupmode', 'groupingid', 'groupmembersonly',
-                           'indent', 'completion', 'extra', 'extraclasses', 'onclick', 'content',
+                           'indent', 'completion', 'extra', 'extraclasses', 'iconurl', 'onclick', 'content',
                            'icon', 'iconcomponent', 'customdata', 'showavailability', 'availablefrom',
                            'availableuntil', 'conditionscompletion', 'conditionsgrade',
                            'completionview', 'completionexpected', 'score', 'showdescription')
@@ -2174,6 +2160,22 @@ function make_categories_options() {
 }
 
 /**
+ * Gets the name of a course to be displayed when showing a list of courses.
+ * By default this is just $course->fullname but user can configure it. The
+ * result of this function should be passed through print_string.
+ * @param object $course Moodle course object
+ * @return string Display name of course (either fullname or short + fullname)
+ */
+function get_course_display_name_for_list($course) {
+    global $CFG;
+    if (!empty($CFG->courselistshortnames)) {
+        return $course->shortname . ' ' .$course->fullname;
+    } else {
+        return $course->fullname;
+    }
+}
+
+/**
  * Prints the category info in indented fashion
  * This function is only used by print_whole_category_list() above
  */
@@ -2231,7 +2233,8 @@ function print_category_info($category, $depth=0, $showcourses = false) {
                     $linkcss = array('class'=>'dimmed');
                 }
 
-                $courselink = html_writer::link(new moodle_url('/course/view.php', array('id'=>$course->id)), format_string($course->fullname), $linkcss);
+                $coursename = get_course_display_name_for_list($course);
+                $courselink = html_writer::link(new moodle_url('/course/view.php', array('id'=>$course->id)), format_string($coursename), $linkcss);
 
                 // print enrol info
                 $courseicon = '';
@@ -2423,7 +2426,9 @@ function print_course($course, $highlightterms = '') {
     echo html_writer::start_tag('h3', array('class'=>'name'));
 
     $linkhref = new moodle_url('/course/view.php', array('id'=>$course->id));
-    $linktext = highlight($highlightterms, format_string($course->fullname));
+
+    $coursename = get_course_display_name_for_list($course);
+    $linktext = highlight($highlightterms, format_string($coursename));
     $linkparams = array('title'=>get_string('entercourse'));
     if (empty($course->visible)) {
         $linkparams['class'] = 'dimmed';
@@ -2435,59 +2440,46 @@ function print_course($course, $highlightterms = '') {
     if (!empty($CFG->coursecontact)) {
         $managerroles = explode(',', $CFG->coursecontact);
         $namesarray = array();
-        if (isset($course->managers)) {
-            if (count($course->managers)) {
-                $rusers = $course->managers;
-                $canviewfullnames = has_capability('moodle/site:viewfullnames', $context);
+        $rusers = array();
 
-                 /// Rename some of the role names if needed
-                if (isset($context)) {
-                    $aliasnames = $DB->get_records('role_names', array('contextid'=>$context->id), '', 'roleid,contextid,name');
-                }
-
-                // keep a note of users displayed to eliminate duplicates
-                $usersshown = array();
-                foreach ($rusers as $ra) {
-
-                    // if we've already displayed user don't again
-                    if (in_array($ra->user->id,$usersshown)) {
-                        continue;
-                    }
-                    $usersshown[] = $ra->user->id;
-
-                    $fullname = fullname($ra->user, $canviewfullnames);
-
-                    if (isset($aliasnames[$ra->roleid])) {
-                        $ra->rolename = $aliasnames[$ra->roleid]->name;
-                    }
-
-                    $namesarray[] = format_string($ra->rolename).': '.
-                                    html_writer::link(new moodle_url('/user/view.php', array('id'=>$ra->user->id, 'course'=>SITEID)), $fullname);
-                }
-            }
+        if (!isset($course->managers)) {
+            $rusers = get_role_users($managerroles, $context, true,
+                'ra.id AS raid, u.id, u.username, u.firstname, u.lastname,
+                 r.name AS rolename, r.sortorder, r.id AS roleid',
+                'r.sortorder ASC, u.lastname ASC');
         } else {
-            $rusers = get_role_users($managerroles, $context,
-                                     true, '', 'r.sortorder ASC, u.lastname ASC');
-            if (is_array($rusers) && count($rusers)) {
-                $canviewfullnames = has_capability('moodle/site:viewfullnames', $context);
+            //  use the managers array if we have it for perf reasosn
+            //  populate the datastructure like output of get_role_users();
+            foreach ($course->managers as $manager) {
+                $u = new stdClass();
+                $u = $manager->user;
+                $u->roleid = $manager->roleid;
+                $u->rolename = $manager->rolename;
 
-                /// Rename some of the role names if needed
-                if (isset($context)) {
-                    $aliasnames = $DB->get_records('role_names', array('contextid'=>$context->id), '', 'roleid,contextid,name');
-                }
-
-                foreach ($rusers as $teacher) {
-                    $fullname = fullname($teacher, $canviewfullnames);
-
-                    /// Apply role names
-                    if (isset($aliasnames[$teacher->roleid])) {
-                        $teacher->rolename = $aliasnames[$teacher->roleid]->name;
-                    }
-
-                    $namesarray[] = format_string($teacher->rolename).': '.
-                                    html_writer::link(new moodle_url('/user/view.php', array('id'=>$teacher->id, 'course'=>SITEID)), $fullname);
-                }
+                $rusers[] = $u;
             }
+        }
+
+        /// Rename some of the role names if needed
+        if (isset($context)) {
+            $aliasnames = $DB->get_records('role_names', array('contextid'=>$context->id), '', 'roleid,contextid,name');
+        }
+
+        $namesarray = array();
+        $canviewfullnames = has_capability('moodle/site:viewfullnames', $context);
+        foreach ($rusers as $ra) {
+            if (isset($namesarray[$ra->id])) {
+                //  only display a user once with the higest sortorder role
+                continue;
+            }
+
+            if (isset($aliasnames[$ra->roleid])) {
+                $ra->rolename = $aliasnames[$ra->roleid]->name;
+            }
+
+            $fullname = fullname($ra, $canviewfullnames);
+            $namesarray[$ra->id] = format_string($ra->rolename).': '.
+                html_writer::link(new moodle_url('/user/view.php', array('id'=>$ra->id, 'course'=>SITEID)), $fullname);
         }
 
         if (!empty($namesarray)) {

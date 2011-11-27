@@ -28,6 +28,8 @@ define('SCORM_TYPE_LOCALSYNC', 'localsync');
 define('SCORM_TYPE_EXTERNAL', 'external');
 /** SCORM_TYPE_IMSREPOSITORY = imsrepository */
 define('SCORM_TYPE_IMSREPOSITORY', 'imsrepository');
+/** SCORM_TYPE_AICCURL = external AICC url */
+define('SCORM_TYPE_AICCURL', 'aiccurl');
 
 define('SCORM_TOC_SIDE', 0);
 define('SCORM_TOC_HIDDEN', 1);
@@ -103,13 +105,12 @@ function scorm_add_instance($scorm, $mform=null) {
 
     } else if ($record->scormtype === SCORM_TYPE_LOCALSYNC) {
         $record->reference = $scorm->packageurl;
-
     } else if ($record->scormtype === SCORM_TYPE_EXTERNAL) {
         $record->reference = $scorm->packageurl;
-
     } else if ($record->scormtype === SCORM_TYPE_IMSREPOSITORY) {
         $record->reference = $scorm->packageurl;
-
+    } else if ($record->scormtype === SCORM_TYPE_AICCURL) {
+        $record->reference = $scorm->packageurl;
     } else {
         return false;
     }
@@ -503,6 +504,13 @@ function scorm_cron () {
         $scormsupdate = $DB->get_records('scorm', array('updatefreq'=>UPDATE_EVERYDAY));
         foreach ($scormsupdate as $scormupdate) {
             scorm_parse($scormupdate, true);
+        }
+
+        //now clear out AICC session table with old session data
+        $cfg_scorm = get_config('scorm');
+        if (!empty($cfg_scorm->allowaicchacp)) {
+            $expiretime = time() - ($cfg_scorm->aicchacpkeepsessiondata*24*60*60);
+            $DB->delete_records_select('scorm_aicc_session', 'timemodified < ?', array($expiretime));
         }
     }
 

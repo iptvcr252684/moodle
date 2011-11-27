@@ -900,6 +900,7 @@ function external_update_descriptions($component) {
         $service['enabled'] = empty($service['enabled']) ? 0 : $service['enabled'];
         $service['requiredcapability'] = empty($service['requiredcapability']) ? null : $service['requiredcapability'];
         $service['restrictedusers'] = !isset($service['restrictedusers']) ? 1 : $service['restrictedusers'];
+        $service['downloadfiles'] = !isset($service['downloadfiles']) ? 0 : $service['downloadfiles'];
         $service['shortname'] = !isset($service['shortname']) ? null : $service['shortname'];
 
         $update = false;
@@ -909,6 +910,10 @@ function external_update_descriptions($component) {
         }
         if ($dbservice->restrictedusers != $service['restrictedusers']) {
             $dbservice->restrictedusers = $service['restrictedusers'];
+            $update = true;
+        }
+        if ($dbservice->downloadfiles != $service['downloadfiles']) {
+            $dbservice->downloadfiles = $service['downloadfiles'];
             $update = true;
         }
         //if shortname is not a PARAM_ALPHANUMEXT, fail (tested here for service update and creation)
@@ -964,6 +969,7 @@ function external_update_descriptions($component) {
         $dbservice->enabled            = empty($service['enabled']) ? 0 : $service['enabled'];
         $dbservice->requiredcapability = empty($service['requiredcapability']) ? null : $service['requiredcapability'];
         $dbservice->restrictedusers    = !isset($service['restrictedusers']) ? 1 : $service['restrictedusers'];
+        $dbservice->downloadfiles      = !isset($service['downloadfiles']) ? 0 : $service['downloadfiles'];
         $dbservice->shortname          = !isset($service['shortname']) ? null : $service['shortname'];
         $dbservice->component          = $component;
         $dbservice->timecreated        = time();
@@ -1198,18 +1204,6 @@ function upgrade_setup_debug($starting) {
     }
 }
 
-/**
- * @global object
- */
-function print_upgrade_reload($url) {
-    global $OUTPUT;
-
-    echo "<br />";
-    echo '<div class="continuebutton">';
-    echo '<a href="'.$url.'" title="'.get_string('reload').'" ><img src="'.$OUTPUT->pix_url('i/reload') . '" alt="" /> '.get_string('reload').'</a>';
-    echo '</div><br />';
-}
-
 function print_upgrade_separator() {
     if (!CLI_SCRIPT) {
         echo '<hr />';
@@ -1417,11 +1411,11 @@ function upgrade_core($version, $verbose) {
         purge_all_caches();
 
         // Clean up contexts - more and more stuff depends on existence of paths and contexts
-        cleanup_contexts();
-        create_contexts();
-        build_context_path();
-        $syscontext = get_context_instance(CONTEXT_SYSTEM);
-        mark_context_dirty($syscontext->path);
+        context_helper::cleanup_instances();
+        context_helper::create_instances(null, false);
+        context_helper::build_all_paths(false);
+        $syscontext = context_system::instance();
+        $syscontext->mark_dirty();
 
         print_upgrade_part_end('moodle', false, $verbose);
     } catch (Exception $ex) {

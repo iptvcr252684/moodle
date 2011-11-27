@@ -155,6 +155,7 @@ abstract class page_wiki {
      */
     protected function setup_tabs($options = array()) {
         global $CFG, $PAGE;
+        $groupmode = groups_get_activity_groupmode($PAGE->cm);
 
         if (empty($CFG->usecomments) || !has_capability('mod/wiki:viewcomment', $PAGE->context)){
             unset($this->tabs['comments']);
@@ -162,6 +163,19 @@ abstract class page_wiki {
 
         if (!has_capability('mod/wiki:editpage', $PAGE->context)){
             unset($this->tabs['edit']);
+        }
+
+        if ($groupmode and $groupmode == VISIBLEGROUPS) {
+            $currentgroup = groups_get_activity_group($PAGE->cm);
+            $manage = has_capability('mod/wiki:managewiki', $PAGE->cm->context);
+            $edit = has_capability('mod/wiki:editpage', $PAGE->context);
+            if (!$manage and !($edit and groups_is_member($currentgroup))) {
+                unset($this->tabs['edit']);
+            }
+        } else {
+            if (!has_capability('mod/wiki:editpage', $PAGE->context)) {
+                unset($this->tabs['edit']);
+            }
         }
 
 
@@ -1218,7 +1232,7 @@ class page_wiki_history extends page_wiki {
         $creator = wiki_get_user_info($version0page->userid);
         $a = new StdClass;
         $a->date = userdate($this->page->timecreated, get_string('strftimedaydatetime', 'langconfig'));
-        $a->username = $creator->username;
+        $a->username = fullname($creator);
         echo $OUTPUT->heading(get_string('createddate', 'wiki', $a), 4, 'wiki_headingtime');
         if ($vcount > 0) {
 
@@ -1246,20 +1260,13 @@ class page_wiki_history extends page_wiki {
             } else {
 
                 $checked = $vcount - $offset;
-                $lastdate = '';
                 $rowclass = array();
 
                 foreach ($versions as $version) {
                     $user = wiki_get_user_info($version->userid);
                     $picture = $OUTPUT->user_picture($user, array('popup' => true));
                     $date = userdate($version->timecreated, get_string('strftimedate'));
-                    if ($date == $lastdate) {
-                        $date = '';
-                        $rowclass[] = '';
-                    } else {
-                        $lastdate = $date;
-                        $rowclass[] = 'wiki_histnewdate';
-                    }
+                    $rowclass[] = 'wiki_histnewdate';
                     $time = userdate($version->timecreated, get_string('strftimetime', 'langconfig'));
                     $versionid = wiki_get_version($version->id);
                     if ($versionid) {
@@ -2545,7 +2552,7 @@ class page_wiki_admin extends page_wiki {
         $creator = wiki_get_user_info($version0page->userid);
         $a = new stdClass();
         $a->date = userdate($this->page->timecreated, get_string('strftimedaydatetime', 'langconfig'));
-        $a->username = $creator->username;
+        $a->username = fullname($creator);
         echo $OUTPUT->heading(get_string('createddate', 'wiki', $a), 4, 'wiki_headingtime');
         if ($versioncount > 0) {
             /// If there is only one version, we don't need radios nor forms

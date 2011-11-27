@@ -24,6 +24,10 @@
  */
 
 
+// disable moodle specific debug messages and any errors in output,
+// comment out when debugging or better look into error log!
+define('NO_DEBUG_DISPLAY', true);
+
 // we need just the values from config.php and minlib.php
 define('ABORT_AFTER_CONFIG', true);
 require('../config.php'); // this stops immediately at the beginning of lib/setup.php
@@ -77,6 +81,9 @@ require_once('Minify.php');
 $theme = theme_config::load($themename);
 
 if ($rev > -1) {
+    // note: cache reset might have purged our cache dir structure,
+    //       make sure we do not use stale file stat cache in the next check_dir_exists()
+    clearstatcache();
     check_dir_exists(dirname($candidate));
     $fp = fopen($candidate, 'w');
     fwrite($fp, minify($theme->javascript_files($type)));

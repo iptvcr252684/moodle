@@ -110,6 +110,9 @@ function scorm_forge_cols_regexp($columns, $remodule='(".*")?,') {
 function scorm_parse_aicc($scorm) {
     global $DB;
 
+    if ($scorm->scormtype == SCORM_TYPE_AICCURL) {
+        return scorm_aicc_generate_simple_sco($scorm);
+    }
     if (!isset($scorm->cmid)) {
         $cm = get_coursemodule_from_instance('scorm', $scorm->id);
         $scorm->cmid = $cm->id;
@@ -249,7 +252,8 @@ function scorm_parse_aicc($scorm) {
             if ($ss = $DB->get_record('scorm_scoes', array('scorm'=>$scorm->id,
                                                            'identifier'=>$sco->identifier))) {
                 $id = $ss->id;
-                $DB->update_record('scorm_scoes', $sco);
+                $sco->id = $id;
+                $DB->update_record('scorm_scoes',$sco);
                 unset($oldscoes[$id]);
             } else {
                 $id = $DB->insert_record('scorm_scoes', $sco);
@@ -340,4 +344,96 @@ function scorm_parse_aicc($scorm) {
     $scorm->launch = $launch;
 
     return true;
+}
+
+/**
+ * Given a scormid creates an AICC Session record to allow HACP
+ *
+ * @param int $scormid - id from scorm table
+ * @return string hacpsession
+ */
+function scorm_aicc_get_hacp_session($scormid) {
+    global $USER, $DB, $SESSION;
+    $cfg_scorm = get_config('scorm');
+    if (empty($cfg_scorm->allowaicchacp)) {
+        return false;
+    }
+    $now = time();
+
+    $hacpsession = $SESSION->scorm;
+    $hacpsession->scormid = $scormid;
+    $hacpsession->hacpsession = random_string(20);
+    $hacpsession->userid      = $USER->id;
+    $hacpsession->timecreated = $now;
+    $hacpsession->timemodified = $now;
+    $DB->insert_record('scorm_aicc_session', $hacpsession);
+
+    return $hacpsession->hacpsession;
+}
+
+/**
+ * Check the hacp_session for whether it is valid.
+ *
+ * @param string $hacpsession The hacpsession value to check (optional). Normally leave this blank
+ *      and this function will do required_param('sesskey', ...).
+ * @return mixed - false if invalid, otherwise returns record from scorm_aicc_session table.
+ */
+function scorm_aicc_confirm_hacp_session($hacpsession) {
+    global $DB;
+    $cfg_scorm = get_config('scorm');
+    if (empty($cfg_scorm->allowaicchacp)) {
+        return false;
+    }
+    $time = time()-($cfg_scorm->aicchacptimeout * 60);
+    $sql = "hacpsession = ? AND timemodified > ?";
+    $hacpsession = $DB->get_record_select('scorm_aicc_session', $sql, array($hacpsession, $time));
+    if (!empty($hacpsession)) { //update timemodified as this is still an active session - resets the timeout.
+        $hacpsession->timemodified = time();
+        $DB->update_record('scorm_aicc_session', $hacpsession);
+    }
+    return $hacpsession;
+}
+
+/**
+ * generate a simple single activity AICC object
+ * structure to wrap around and externally linked
+ * AICC package URL
+ *
+ * @param object $scorm package record
+ */
+function scorm_aicc_generate_simple_sco($scorm) {
+    global $DB;
+    // find the old one
+    $scos = $DB->get_records('scorm_scoes', array('scorm'=>$scorm->id));
+    if (!empty($scos)) {
+        $sco = array_shift($scos);
+    } else {
+        $sco = new object();
+    }
+    // get rid of old ones
+    foreach($scos as $oldsco) {
+        $DB->delete_records('scorm_scoes', array('id'=>$oldsco->id));
+        $DB->delete_records('scorm_scoes_track', array('scoid'=>$oldsco->id));
+    }
+
+    $sco->identifier = 'A1';
+    $sco->scorm = $scorm->id;
+    $sco->organization = '';
+    $sco->title = $scorm->name;
+    $sco->parent = '/';
+    // add the HACP signal to the activity launcher
+    if (preg_match('/\?/', $scorm->reference)) {
+        $sco->launch = $scorm->reference.'&CMI=HACP';
+    }
+    else {
+        $sco->launch = $scorm->reference.'?CMI=HACP';
+    }
+    $sco->scormtype = 'sco';
+    if (isset($sco->id)) {
+        $DB->update_record('scorm_scoes', $sco);
+        $id = $sco->id;
+    } else {
+        $id = $DB->insert_record('scorm_scoes', $sco);
+    }
+    return $id;
 }
