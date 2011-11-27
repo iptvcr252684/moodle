@@ -19,6 +19,17 @@ if ($hascustommenu) {
     $bodyclasses[] = 'has_custom_menu';
 }
 
+// This direction correction is required to fix the layout for users who are using
+// a right-to-left language AND IE6 or IE7. For those users this layout completely
+// fails due to IE6/7 bugs. The easiest solution to this is to trick the browser
+// into processing the layout using ltr direction, and then reset the direction
+// to rtl for the display of content.
+// When IE7 is no longer supported officially this hack can be removed.
+$directioncorrection = '';
+if (right_to_left()) {
+    $directioncorrection = ' dir="rtl"';
+}
+
 echo $OUTPUT->doctype() ?>
 <html <?php echo $OUTPUT->htmlattributes() ?>>
 <head>
@@ -28,9 +39,9 @@ echo $OUTPUT->doctype() ?>
 </head>
 <body id="<?php p($PAGE->bodyid) ?>" class="<?php p($PAGE->bodyclasses.' '.join(' ', $bodyclasses)) ?>">
 <?php echo $OUTPUT->standard_top_of_body_html() ?>
-<div id="page">
+<div id="page" dir="ltr">
 <?php if ($hasheading || $hasnavbar) { ?>
-    <div id="page-header">
+    <div id="page-header"<?php echo $directioncorrection;?>>
         <?php if ($hasheading) { ?>
         <h1 class="headermain"><?php echo $PAGE->heading ?></h1>
         <div class="headermenu"><?php
@@ -57,14 +68,14 @@ echo $OUTPUT->doctype() ?>
 
     <div id="page-content" class="clearfix">
         <div id="report-main-content">
-            <div class="region-content">
+            <div class="region-content"<?php echo $directioncorrection;?>>
                 <?php echo $OUTPUT->main_content() ?>
             </div>
         </div>
         <?php if ($hassidepre) { ?>
         <div id="report-region-wrap">
             <div id="report-region-pre" class="block-region">
-                <div class="region-content">
+                <div class="region-content"<?php echo $directioncorrection;?>>
                     <?php echo $OUTPUT->blocks_for_region('side-pre') ?>
                 </div>
             </div>
@@ -74,7 +85,7 @@ echo $OUTPUT->doctype() ?>
 
 <!-- START OF FOOTER -->
     <?php if ($hasfooter) { ?>
-    <div id="page-footer" class="clearfix">
+    <div id="page-footer" class="clearfix"<?php echo $directioncorrection;?>>
         <p class="helplink"><?php echo page_doc_link(get_string('moodledocslink')) ?></p>
         <?php
         echo $OUTPUT->login_info();
