@@ -40,6 +40,17 @@ $hasframe = !isset($PAGE->theme->settings->noframe) || !$PAGE->theme->settings->
 $displaylogo = !isset($PAGE->theme->settings->displaylogo) || $PAGE->theme->settings->displaylogo;
 /************************************************************************************************/
 
+// This direction correction is required to fix the layout for users who are using
+// a right-to-left language AND IE6 or IE7. For those users this layout completely
+// fails due to IE6/7 bugs. The easiest solution to this is to trick the browser
+// into processing the layout using ltr direction, and then reset the direction
+// to rtl for the display of content.
+// When IE7 is no longer supported officially this hack can be removed.
+$directioncorrection = '';
+if (right_to_left()) {
+    $directioncorrection = ' dir="rtl"';
+}
+
 echo $OUTPUT->doctype() ?>
 <html <?php echo $OUTPUT->htmlattributes() ?>>
 <head>
@@ -101,14 +112,14 @@ if ($hasframe) { ?>
 <!-- end of navigation bar -->
 
 <!-- start of moodle content -->
-            <div id="page-content">
+            <div id="page-content" dir="ltr">
                 <div id="region-main-box">
                     <div id="region-post-box">
 
                         <!-- main mandatory content of the moodle page  -->
                         <div id="region-main-wrap">
                             <div id="region-main">
-                                <div class="region-content">
+                                <div class="region-content"<?php echo $directioncorrection;?>>
                                     <?php echo $OUTPUT->main_content() ?>
                                 </div>
                             </div>
@@ -119,7 +130,7 @@ if ($hasframe) { ?>
                         <!-- left column block - diplayed only if... -->
                         <?php if ($hassidepre) { ?>
                         <div id="region-pre" class="block-region">
-                            <div class="region-content">
+                            <div class="region-content"<?php echo $directioncorrection;?>>
                                 <?php echo $OUTPUT->blocks_for_region('side-pre') ?>
                             </div>
                         </div>
@@ -129,7 +140,7 @@ if ($hasframe) { ?>
                         <!-- right column block - diplayed only if... -->
                         <?php if ($hassidepost) { ?>
                         <div id="region-post" class="block-region">
-                            <div class="region-content">
+                            <div class="region-content"<?php echo $directioncorrection;?>>
                                 <?php echo $OUTPUT->blocks_for_region('side-post') ?>
                             </div>
                         </div>
