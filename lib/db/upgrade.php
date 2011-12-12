@@ -6819,7 +6819,8 @@ FROM
         if ($dbman->table_exists($table)) {
             $instances = $DB->get_records('block_instances', array('blockname'=>'search'));
             foreach($instances as $instance) {
-                context_helper::delete_instance(CONTEXT_BLOCK, $instance->id);
+                $context = context_block::instance($instance->id);
+                upgrade_cleanup_unwanted_block_contexts(array($context->id)); // do not use standard block deleting MDL-30517, there is no extra stuff used in block, so this should be safe
                 $DB->delete_records('block_positions', array('blockinstanceid' => $instance->id));
                 $DB->delete_records('block_instances', array('id' => $instance->id));
             }
@@ -6946,6 +6947,9 @@ FROM
         // Main savepoint reached
         upgrade_main_savepoint(true, 2011111800.01);
     }
+
+    // Moodle v2.2.0 release upgrade line
+    // Put any upgrade step following this
 
     return true;
 }

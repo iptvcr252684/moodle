@@ -153,30 +153,31 @@ function forum_update_instance($forum, $mform) {
     }
 
     if ($forum->type == 'single') {  // Update related discussion and post.
-        if (! $discussion = $DB->get_record('forum_discussions', array('forum'=>$forum->id))) {
-            if ($discussions = $DB->get_records('forum_discussions', array('forum'=>$forum->id), 'timemodified ASC')) {
-                echo $OUTPUT->notification('Warning! There is more than one discussion in this forum - using the most recent');
-                $discussion = array_pop($discussions);
-            } else {
-                // try to recover by creating initial discussion - MDL-16262
-                $discussion = new stdClass();
-                $discussion->course          = $forum->course;
-                $discussion->forum           = $forum->id;
-                $discussion->name            = $forum->name;
-                $discussion->assessed        = $forum->assessed;
-                $discussion->message         = $forum->intro;
-                $discussion->messageformat   = $forum->introformat;
-                $discussion->messagetrust    = true;
-                $discussion->mailnow         = false;
-                $discussion->groupid         = -1;
+        $discussions = $DB->get_records('forum_discussions', array('forum'=>$forum->id), 'timemodified ASC');
+        if (!empty($discussions)) {
+            if (count($discussions) > 1) {
+                echo $OUTPUT->notification(get_string('warnformorepost', 'forum'));
+            }
+            $discussion = array_pop($discussions);
+        } else {
+            // try to recover by creating initial discussion - MDL-16262
+            $discussion = new stdClass();
+            $discussion->course          = $forum->course;
+            $discussion->forum           = $forum->id;
+            $discussion->name            = $forum->name;
+            $discussion->assessed        = $forum->assessed;
+            $discussion->message         = $forum->intro;
+            $discussion->messageformat   = $forum->introformat;
+            $discussion->messagetrust    = true;
+            $discussion->mailnow         = false;
+            $discussion->groupid         = -1;
 
-                $message = '';
+            $message = '';
 
-                forum_add_discussion($discussion, null, $message);
+            forum_add_discussion($discussion, null, $message);
 
-                if (! $discussion = $DB->get_record('forum_discussions', array('forum'=>$forum->id))) {
-                    print_error('cannotadd', 'forum');
-                }
+            if (! $discussion = $DB->get_record('forum_discussions', array('forum'=>$forum->id))) {
+                print_error('cannotadd', 'forum');
             }
         }
         if (! $post = $DB->get_record('forum_posts', array('id'=>$discussion->firstpost))) {
@@ -2857,6 +2858,7 @@ function forum_subscribed_users($course, $forum, $groupid=0, $context = null, $f
                   u.maildigest,
                   u.imagealt,
                   u.email,
+                  u.emailstop,
                   u.city,
                   u.country,
                   u.lastaccess,
@@ -4013,6 +4015,72 @@ function forum_get_file_areas($course, $cm, $context) {
 }
 
 /**
+ * File browsing support for forum module.
+ *
+ * @param object $browser
+ * @param object $areas
+ * @param object $course
+ * @param object $cm
+ * @param object $context
+ * @param string $filearea
+ * @param int $itemid
+ * @param string $filepath
+ * @param string $filename
+ * @return object file_info instance or null if not found
+ */
+function forum_get_file_info($browser, $areas, $course, $cm, $context, $filearea, $itemid, $filepath, $filename) {
+    global $CFG, $DB;
+
+    if ($context->contextlevel != CONTEXT_MODULE) {
+        return null;
+    }
+
+    $fileareas = array('attachment', 'post');
+    if (!in_array($filearea, $fileareas)) {
+        return null;
+    }
+
+    if (!$post = $DB->get_record('forum_posts', array('id' => $itemid))) {
+        return null;
+    }
+
+    if (!$discussion = $DB->get_record('forum_discussions', array('id' => $post->discussion))) {
+        return null;
+    }
+
+    if (!$forum = $DB->get_record('forum', array('id' => $cm->instance))) {
+        return null;
+    }
+
+    $fs = get_file_storage();
+    $filepath = is_null($filepath) ? '/' : $filepath;
+    $filename = is_null($filename) ? '.' : $filename;
+    if (!($storedfile = $fs->get_file($context->id, 'mod_forum', $filearea, $itemid, $filepath, $filename))) {
+        return null;
+    }
+
+    // Make sure groups allow this user to see this file
+    if ($discussion->groupid > 0 and $groupmode = groups_get_activity_groupmode($cm, $course)) {   // Groups are being used
+        if (!groups_group_exists($discussion->groupid)) { // Can't find group
+            return null;                           // Be safe and don't send it to anyone
+        }
+
+        if (!groups_is_member($discussion->groupid) and !has_capability('moodle/site:accessallgroups', $context)) {
+            // do not send posts from other groups when in SEPARATEGROUPS or VISIBLEGROUPS
+            return null;
+        }
+    }
+
+    // Make sure we're allowed to see it...
+    if (!forum_user_can_see_post($forum, $discussion, $post, NULL, $cm)) {
+        return null;
+    }
+
+    $urlbase = $CFG->wwwroot.'/pluginfile.php';
+    return new file_info_stored($browser, $context, $storedfile, $urlbase, $filearea, $itemid, true, true, false);
+}
+
+/**
  * Serves the forum attachments. Implements needed access control ;-)
  *
  * @param object $course
@@ -4831,6 +4899,10 @@ function forum_user_can_post_discussion($forum, $currentgroup=null, $unused=-1, 
     }
 
     if (!has_capability($capname, $context)) {
+        return false;
+    }
+
+    if ($forum->type == 'single') {
         return false;
     }
 
@@ -7430,7 +7502,16 @@ function forum_extend_settings_navigation(settings_navigation $settingsnav, navi
         }
     }
 
-    if ($enrolled && !empty($CFG->enablerssfeeds) && !empty($CFG->forum_enablerssfeeds) && $forumobject->rsstype && $forumobject->rssarticles) {
+    if (!isloggedin() && $PAGE->course->id == SITEID) {
+        $userid = guest_user()->id;
+    } else {
+        $userid = $USER->id;
+    }
+
+    $hascourseaccess = ($PAGE->course->id == SITEID) || can_access_course($PAGE->course, $userid);
+    $enablerssfeeds = !empty($CFG->enablerssfeeds) && !empty($CFG->forum_enablerssfeeds);
+
+    if ($enablerssfeeds && $forumobject->rsstype && $forumobject->rssarticles && $hascourseaccess) {
 
         if (!function_exists('rss_get_url')) {
             require_once("$CFG->libdir/rsslib.php");
@@ -7441,11 +7522,7 @@ function forum_extend_settings_navigation(settings_navigation $settingsnav, navi
         } else {
             $string = get_string('rsssubscriberssposts','forum');
         }
-        if (!isloggedin()) {
-            $userid = 0;
-        } else {
-            $userid = $USER->id;
-        }
+
         $url = new moodle_url(rss_get_url($PAGE->cm->context->id, $userid, "mod_forum", $forumobject->id));
         $forumnode->add($string, $url, settings_navigation::TYPE_SETTING, null, null, new pix_icon('i/rss', ''));
     }
