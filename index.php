@@ -65,6 +65,9 @@
         }
     }
 
+    // OpenID redirect (patch , nadavkav)
+    header('X-XRDS-Location: ' . new moodle_url('/local/openid_idp/index.php', array('action' => 'idpXrds')));
+
     if (isloggedin()) {
         add_to_log(SITEID, 'course', 'view', 'view.php?id='.SITEID, SITEID);
     }

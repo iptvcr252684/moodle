@@ -1,0 +1,13 @@
+diff --git a/index.php b/index.php
+index aff7187..fa5072c 100644
+--- a/index.php
++++ b/index.php
+@@ -63,6 +63,8 @@
+         }
+     }
+ 
++    header('X-XRDS-Location: ' . new moodle_url('/local/openid_idp/index.php', array('action' => 'idpXrds')));
++
+     if (isloggedin()) {
+         add_to_log(SITEID, 'course', 'view', 'view.php?id='.SITEID, SITEID);
+     }

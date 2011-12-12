@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLDB PATH="local/openid_idp/db" VERSION="20111028" COMMENT="XMLDB file for OpenID provider plugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+    <TABLE NAME="local_openid_idp_trusted_rps" COMMENT="Relying Parties (clients) that are automatically approved for logging in.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="url"/>
+        <FIELD NAME="url" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" PREVIOUS="id" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="A userid of 0 means that the RP is trusted for all users." PREVIOUS="url" NEXT="options"/>
+        <FIELD NAME="options" TYPE="text" LENGTH="medium" NOTNULL="true" SEQUENCE="false" COMMENT="sign-in options, such as which SReg or AX fields are sent" PREVIOUS="userid"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="useruser_ix" UNIQUE="false" FIELDS="userid, url"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

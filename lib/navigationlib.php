@@ -3738,6 +3738,12 @@ class settings_navigation extends navigation_node {
             }
         }
 
+        // OpenID (patch , nadavkav)
+        if (($currentuser && has_capability('local/openid_idp:logintoremote', $systemcontext)) || has_capability('moodle/site:config', $systemcontext)) {
+            $url = new moodle_url('/local/openid_idp/config.php', array('userid'=>$user->id));
+            $usersetting->add(get_string('pluginname', 'local_openid_idp'), $url, self::TYPE_SETTING);
+        }
+
         // Login as ...
         if (!$user->deleted and !$currentuser && !session_is_loggedinas() && has_capability('moodle/user:loginas', $coursecontext) && !is_siteadmin($user->id)) {
             $url = new moodle_url('/course/loginas.php', array('id'=>$course->id, 'user'=>$user->id, 'sesskey'=>sesskey()));

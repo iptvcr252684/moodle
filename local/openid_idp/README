@@ -1,0 +1,77 @@
+OpenID provider for Moodle
+==========================
+Copyright &copy; 2011 MuchLearning
+
+About
+-----
+This plugin allows users to log into OpenID-enabled websites using their Moodle
+account.  It supports the Simple Registration (SReg) and Attribute Exchange
+(AX) OpenID extensions.
+
+Installation
+------------
+1. copy the contents of this package into /local/openid_idp in your Moodle install
+2. copy the contents of the openid-php/Auth directory into Moodle's /lib/pear
+   directory
+3. patch Moodle's /lib/navigationlib.php with navigationlib.php.diff (optional:
+   this allows users to easily edit their list of trusted sites)
+4. patch Moodle's /index.php with index.php.diff (optional: this allows users
+   to use the main site URL as the OpenID identity, rather than /local/openid_idp/)
+5. in your Moodle site, go to Site administration > Notifications
+6. make sure that users who should be able to use OpenID have the
+   local/openid_idp:logintoremote capability at the system level (by default,
+   this capability is given to the authenticated user role)
+
+Usage
+-----
+1. On an OpenID-enabled web site, enter your Moodle site's URL as your OpenID
+   identity, and click the "Log in" button.  (This only works if you patched
+   index.php (step 4 above).  If you did not, then you will need to append
+   "/local/openid_idp/" to your URL.)
+2. You will be prompted to log into your Moodle site if you are not already
+   logged in.
+3. Moodle will confirm whether you want to log into the remote site using your
+   Moodle account.  If the remote site requested personal information, the
+   plugin will confirm the information that will be sent.
+4. You can choose to either always allow logins from this site (to skip the
+   confirmation step in the future), or to log in without remembering the
+   site, or to cancel the login process completely.
+
+Configuration
+-------------
+This plugin adds a page under the Site administration settings under the
+"Plugins > Authentication" section (may be moved in the future), which allows
+you to add hosts that do not need confirmation to log into.  It also allows you
+to specify what user profile fields will be sent.  (Note: this only affects
+fields that the remote host marks as "optional".  "Mandatory" fields are always
+sent.)  These settings will affect all users on the system.
+
+If you patched /lib/navigationlib.php in Step 3 above, users will have access
+to a similar page in their "My profile settings".
+
+Todo
+----
+* allow configuration to only allow logging in to certain sites (to make it a
+  closed OpenID provider)
+* support the OAuth hybrid extension
+
+License
+-------
+
+This plugin is licensed under the GPL, version 3 or later:
+
+    This is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This software is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+The plugin contains code (the JanRain OpenID libraries) that are licensed under
+the Apache License 2.0.
