@@ -29,6 +29,35 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/filestorage/file_archive.php");
 
+function decode_unicoded_hebrew($str) {
+    $decode="";
+
+    $ar=split("&#",$str);
+
+    foreach ($ar as $value ) {
+
+        $in1=strpos($value,";"); //end of code
+
+        if ($in1>0) {// unicode
+
+            $code=substr($value,0,$in1);
+
+            if ($code>=1456 and $code<=1514) { //hebrew
+                   $code=$code-1264;
+                $xchr=chr($code);
+               } else { //other unicode
+                $xchr="&#" . $code . ";";
+             }
+            $xchr=$xchr . substr($value,$in1+1);
+        } else //not unicode
+              $xchr = $value;
+
+
+        $decode=$decode . $xchr;
+    }
+    return $decode;
+}
+
 /**
  * zip file archive class.
  *
@@ -58,7 +87,23 @@ class zip_archive extends file_archive {
      * @param string $encoding archive local paths encoding
      * @return bool success
      */
-    public function open($archivepathname, $mode=file_archive::CREATE, $encoding='utf-8') {
+    public function open($archivepathname, $mode=file_archive::CREATE, $encoding='') {
+
+        global $CFG;
+
+        if (empty($encoding)) {
+            $localewincharset = get_string('localewincharset', 'langconfig');
+            // if clients is Windows, use localewincharset as default charset
+            // otherwise, use utf-8
+            if(!empty($localewincharset) and check_browser_operating_system('Windows')) {
+                $encoding = $localewincharset;
+            } else {
+                //$encoding = 'utf-8';
+                $encoding = 'Windows-1255';
+                //$encoding = $localewincharset;//'Windows-1255';
+            }
+        }
+
         $this->close();
 
         $this->usedmem = 0;
@@ -235,7 +280,23 @@ class zip_archive extends file_archive {
             }
         }
 
-        return $this->za->addFile($pathname, $localname);
+        //$iconvlocalname = iconv("UTF-8", "ISO-8859-8//TRANSLIT//IGNORE", $localname);
+        //$iconvlocalname = iconv("UTF-8", "ISO-8859-1//TRANSLIT//IGNORE", $localname);
+        //$iconvlocalname = iconv('UTF-8', 'WINDOWS-1255//TRANSLIT//IGNORE', $localname);
+        //$iconvlocalname = iconv('UTF-8', 'WINDOWS-1255//IGNORE//TRANSLIT', $localname);
+        //$iconvlocalname = iconv('UTF-8', 'CP852//TRANSLIT//IGNORE', $localname);
+        //$iconvlocalname = iconv('UTF-8', 'CP852', $localname);
+        //$iconvlocalname = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $localname);
+
+        //setlocale(LC_ALL, 'he_IL');
+        //$iconvlocalname =  $localname;
+
+        //$textlib = textlib_get_instance();
+        //$iconvlocalname  = $textlib->specialtoascii($localname );
+
+        //$iconvlocalname  = preg_replace('/[^\.a-zA-Z\d\_-]/','_', $iconvlocalname ); // only allowed chars
+
+        return $this->za->addFile($pathname, $iconvlocalname );
     }
 
     /**
