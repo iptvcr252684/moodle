@@ -717,6 +717,28 @@ class moodle_url {
         $urlbase = "$CFG->wwwroot/file.php";
         return self::make_file_url($urlbase, '/'.$courseid.'/'.$filepath, $forcedownload);
     }
+
+    /**
+     * Returns URL a relative path from $CFG->wwwroot
+     *
+     * Can be used for passing around urls with the wwwroot stripped
+     *
+     * @param boolean $escaped Use &amp; as params separator instead of plain &
+     * @param array $overrideparams params to add to the output url, these override existing ones with the same name.
+     * @return string Resulting URL
+     * @throws coding_exception if called on a non-local url
+     */
+    public function out_as_local_url($escaped = true, array $overrideparams = null) {
+        global $CFG;
+
+        $url = $this->out($escaped, $overrideparams);
+
+        if (strpos($url, $CFG->wwwroot) !== 0) {
+            throw new coding_exception('out_as_local_url called on a non-local URL');
+        }
+
+        return str_replace($CFG->wwwroot, '', $url);
+    }
 }
 
 /**
@@ -1179,11 +1201,9 @@ function reset_text_filters_cache() {
  * need filter processing e.g. activity titles, post subjects,
  * glossary concepts.
  *
- * @global object
- * @global object
- * @global object
  * @staticvar bool $strcache
- * @param string $string The string to be filtered.
+ * @param string $string The string to be filtered. Should be plain text, expect
+ * possibly for multilang tags.
  * @param boolean $striplinks To strip any link in the result text.
                               Moodle 1.8 default changed from false to true! MDL-8713
  * @param array $options options array/object or courseid
@@ -1241,7 +1261,7 @@ function format_string($string, $striplinks = true, $options = NULL) {
 
     // If the site requires it, strip ALL tags from this string
     if (!empty($CFG->formatstringstriptags)) {
-        $string = strip_tags($string);
+        $string = str_replace(array('<', '>'), array('&lt;', '&gt;'), strip_tags($string));
 
     } else {
         // Otherwise strip just links if that is required (default)

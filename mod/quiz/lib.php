@@ -435,14 +435,13 @@ function quiz_user_complete($course, $user, $mod, $quiz) {
 }
 
 /**
- * Function to be run periodically according to the moodle cron
- * This function searches for things that need to be done, such
- * as sending out mail, toggling flags etc ...
- *
- * @return bool true
+ * Quiz periodic clean-up tasks.
  */
 function quiz_cron() {
-    return true;
+
+    // Run cron for our sub-plugin types.
+    cron_execute_plugin_type('quiz', 'quiz reports');
+    cron_execute_plugin_type('quizaccess', 'quiz access rules');
 }
 
 /**
@@ -1445,9 +1444,10 @@ function quiz_num_attempt_summary($quiz, $cm, $returnzero = false, $currentgroup
     $numattempts = $DB->count_records('quiz_attempts', array('quiz'=> $quiz->id, 'preview'=>0));
     if ($numattempts || $returnzero) {
         if (groups_get_activity_groupmode($cm)) {
+            $a = new stdClass();
             $a->total = $numattempts;
             if ($currentgroup) {
-                $a->group = $DB->count_records_sql('SELECT count(1) FROM ' .
+                $a->group = $DB->count_records_sql('SELECT COUNT(DISTINCT qa.id) FROM ' .
                         '{quiz_attempts} qa JOIN ' .
                         '{groups_members} gm ON qa.userid = gm.userid ' .
                         'WHERE quiz = ? AND preview = 0 AND groupid = ?',
@@ -1455,7 +1455,7 @@ function quiz_num_attempt_summary($quiz, $cm, $returnzero = false, $currentgroup
                 return get_string('attemptsnumthisgroup', 'quiz', $a);
             } else if ($groups = groups_get_all_groups($cm->course, $USER->id, $cm->groupingid)) {
                 list($usql, $params) = $DB->get_in_or_equal(array_keys($groups));
-                $a->group = $DB->count_records_sql('SELECT count(1) FROM ' .
+                $a->group = $DB->count_records_sql('SELECT COUNT(DISTINCT qa.id) FROM ' .
                         '{quiz_attempts} qa JOIN ' .
                         '{groups_members} gm ON qa.userid = gm.userid ' .
                         'WHERE quiz = ? AND preview = 0 AND ' .

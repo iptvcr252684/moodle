@@ -46,12 +46,21 @@ class message_output_email extends message_output {
             return true;
         }
 
+        // skip any messaging suspended and deleted users
+        if ($eventdata->userto->auth === 'nologin' or $eventdata->userto->suspended or $eventdata->userto->deleted) {
+            return true;
+        }
+
         //the user the email is going to
         $recipient = null;
 
         //check if the recipient has a different email address specified in their messaging preferences Vs their user profile
         $emailmessagingpreference = get_user_preferences('message_processor_email_email', null, $eventdata->userto);
-        if (!empty($emailmessagingpreference)) {
+        $emailmessagingpreference = clean_param($emailmessagingpreference, PARAM_EMAIL);
+
+        // If the recipient has set an email address in their preferences use that instead of the one in their profile
+        // but only if overriding the notification email address is allowed
+        if (!empty($emailmessagingpreference) && !empty($CFG->messagingallowemailoverride)) {
             //clone to avoid altering the actual user object
             $recipient = clone($eventdata->userto);
             $recipient->email = $emailmessagingpreference;
@@ -68,12 +77,23 @@ class message_output_email extends message_output {
      * @param object $mform preferences form class
      */
     function config_form($preferences){
-        global $USER;
-        $string = get_string('email','message_email').': <input size="30" name="email_email" value="'.$preferences->email_email.'" />';
+        global $USER, $OUTPUT, $CFG;
+
+        if (empty($CFG->messagingallowemailoverride)) {
+            return null;
+        }
+
+        $inputattributes = array('size'=>'30', 'name'=>'email_email', 'value'=>$preferences->email_email);
+        $string = get_string('email','message_email') . ': ' . html_writer::empty_tag('input', $inputattributes);
 
         if (empty($preferences->email_email) && !empty($preferences->userdefaultemail)) {
-            $string .= ' ('.get_string('default').': '.$preferences->userdefaultemail.')';
+            $string .= get_string('ifemailleftempty', 'message_email', $preferences->userdefaultemail);
         }
+
+        if (!empty($preferences->email_email) && !validate_email($preferences->email_email)) {
+            $string .= $OUTPUT->container(get_string('invalidemail'), 'error');
+        }
+
         return $string;
     }
 

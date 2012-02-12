@@ -52,9 +52,12 @@ $THEME->parents = array(
 
 
 $THEME->sheets = array(
-    'core',
     'pagelayout',
-    'menu'
+    'core',
+    'menu',
+    'report',
+    'admin',
+    'settings'
 );
 
 ////////////////////////////////////////////////////
@@ -118,7 +121,8 @@ $THEME->layouts = array(
         'defaultregion' => 'side-post',
     ),
     'admin' => array(
-        'file' => 'general.php',
+        'theme' => 'base',
+        'file' => 'report.php',
         'regions' => array('side-pre'),
         'defaultregion' => 'side-pre',
     ),
@@ -166,7 +170,8 @@ $THEME->layouts = array(
         'options' => array('nofooter'=>true, 'nonavbar'=>false, 'noblocks'=>true),
     ),
     'report' => array(
-        'file' => 'general.php',
+        'theme' => 'base',
+        'file' => 'report.php',
         'regions' => array('side-pre'),
         'defaultregion' => 'side-pre',
     )
@@ -216,24 +221,11 @@ $THEME->csspostprocess = 'sky_high_process_css';
 // Overrides the right arrow image used throughout Moodle
 ////////////////////////////////////////////////////
 
-// $THEME->layouts
-
-////////////////////////////////////////////////////
-// An array setting the layouts for the theme
-////////////////////////////////////////////////////
-
 // $THEME->parents_exclude_javascripts
 
 ////////////////////////////////////////////////////
 // An array of JavaScript files NOT to inherit from
 // the themes parents
-////////////////////////////////////////////////////
-
-// $THEME->parents_exclude_sheets
-
-////////////////////////////////////////////////////
-// An array of stylesheets not to inherit from the
-// themes parents
 ////////////////////////////////////////////////////
 
 // $THEME->plugins_exclude_sheets
@@ -249,4 +241,3 @@ $THEME->csspostprocess = 'sky_high_process_css';
 // Sets a custom render factory to use with the
 // theme, used when working with custom renderers.
 ////////////////////////////////////////////////////
-

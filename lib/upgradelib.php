@@ -257,6 +257,41 @@ function upgrade_plugin_savepoint($result, $version, $type, $plugin, $allowabort
     }
 }
 
+/**
+ * Detect if there are leftovers in PHP source files.
+ *
+ * During main version upgrades administrators MUST move away
+ * old PHP source files and start from scratch (or better
+ * use git).
+ *
+ * @return bool true means borked upgrade, false means previous PHP files were properly removed
+ */
+function upgrade_stale_php_files_present() {
+    global $CFG;
+
+    $someexamplesofremovedfiles = array(
+        // removed in 2.2dev
+        '/lib/yui/3.4.1pr1/',
+        // removed in 2.2
+        '/search/cron_php5.php',
+        '/course/report/log/indexlive.php',
+        '/admin/report/backups/index.php',
+        '/admin/generator.php',
+        // removed in 2.1
+        '/lib/yui/2.8.0r4/',
+        // removed in 2.0
+        '/blocks/admin/block_admin.php',
+        '/blocks/admin_tree/block_admin_tree.php',
+    );
+
+    foreach ($someexamplesofremovedfiles as $file) {
+        if (file_exists($CFG->dirroot.$file)) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 /**
  * Upgrade plugins
@@ -465,6 +500,10 @@ function upgrade_plugins_modules($startcallback, $endcallback, $verbose) {
             }
         }
 
+        if (empty($module->cron)) {
+            $module->cron = 0;
+        }
+
         // all modules must have en lang pack
         if (!is_readable("$fullmod/lang/en/$mod.php")) {
             throw new plugin_defective_exception($component, 'Missing mandatory en language pack.');
@@ -508,7 +547,7 @@ function upgrade_plugins_modules($startcallback, $endcallback, $verbose) {
                 require_once("$fullmod/db/install.php");
                 // Set installation running flag, we need to recover after exception or error
                 set_config('installrunning', 1, $module->name);
-                $post_install_function = 'xmldb_'.$module->name.'_install';;
+                $post_install_function = 'xmldb_'.$module->name.'_install';
                 $post_install_function();
                 unset_config('installrunning', $module->name);
             }
@@ -542,7 +581,12 @@ function upgrade_plugins_modules($startcallback, $endcallback, $verbose) {
                 upgrade_mod_savepoint($result, $module->version, $mod, false);
             }
 
-        /// Upgrade various components
+            // update cron flag if needed
+            if ($currmodule->cron != $module->cron) {
+                $DB->set_field('modules', 'cron', $module->cron, array('name' => $module->name));
+            }
+
+            // Upgrade various components
             update_capabilities($component);
             log_update_descriptions($component);
             external_update_descriptions($component);

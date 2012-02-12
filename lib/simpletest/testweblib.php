@@ -23,6 +23,8 @@ class web_test extends UnitTestCase {
     }
 
     function test_format_string() {
+        global $CFG;
+
         // Ampersands
         $this->assertEqual(format_string("& &&&&& &&"), "&amp; &amp;&amp;&amp;&amp;&amp; &amp;&amp;");
         $this->assertEqual(format_string("ANother & &&&&& Category"), "ANother &amp; &amp;&amp;&amp;&amp;&amp; Category");
@@ -37,6 +39,21 @@ class web_test extends UnitTestCase {
 
         // Unicode entities
         $this->assertEqual(format_string("&#4475;"), "&#4475;");
+
+        // < and > signs
+        $originalformatstringstriptags = $CFG->formatstringstriptags;
+
+        $CFG->formatstringstriptags = false;
+        $this->assertEqual(format_string('x < 1'), 'x &lt; 1');
+        $this->assertEqual(format_string('x > 1'), 'x &gt; 1');
+        $this->assertEqual(format_string('x < 1 and x > 0'), 'x &lt; 1 and x &gt; 0');
+
+        $CFG->formatstringstriptags = true;
+        $this->assertEqual(format_string('x < 1'), 'x &lt; 1');
+        $this->assertEqual(format_string('x > 1'), 'x &gt; 1');
+        $this->assertEqual(format_string('x < 1 and x > 0'), 'x &lt; 1 and x &gt; 0');
+
+        $CFG->formatstringstriptags = $originalformatstringstriptags;
     }
 
     function test_s() {
@@ -110,6 +127,15 @@ class web_test extends UnitTestCase {
         $this->assertTrue($url1->compare($url2, URL_MATCH_EXACT));
     }
 
+    function test_out_as_local_url() {
+        $url1 = new moodle_url('/lib/simpletest/testweblib.php');
+        $this->assertEqual('/lib/simpletest/testweblib.php', $url1->out_as_local_url());
+
+        $url2 = new moodle_url('http://www.google.com/lib/simpletest/testweblib.php');
+        $this->expectException('coding_exception');
+        $url2->out_as_local_url();
+    }
+
     public function test_html_to_text_simple() {
         $this->assertEqual("\n\n_Hello_ WORLD!", html_to_text('<p><i>Hello</i> <b>world</b>!</p>'));
     }
@@ -137,6 +163,27 @@ class web_test extends UnitTestCase {
 
     public function test_html_to_text_0() {
         $this->assertIdentical('0', html_to_text('0'));
+    }
+
+    public function test_html_to_text_pre_parsing_problem() {
+        $strorig = 'Consider the following function:<br /><pre><span style="color: rgb(153, 51, 102);">void FillMeUp(char* in_string) {'.
+                   '<br />  int i = 0;<br />  while (in_string[i] != \'\0\') {<br />    in_string[i] = \'X\';<br />    i++;<br />  }<br />'.
+                   '}</span></pre>What would happen if a non-terminated string were input to this function?<br /><br />';
+
+        $strconv = 'Consider the following function:
+
+void FillMeUp(char* in_string) {
+ int i = 0;
+ while (in_string[i] != \'\0\') {
+ in_string[i] = \'X\';
+ i++;
+ }
+}
+What would happen if a non-terminated string were input to this function?
+
+';
+
+        $this->assertIdentical($strconv, html_to_text($strorig));
     }
 
     public function test_clean_text() {

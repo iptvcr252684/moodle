@@ -32,7 +32,6 @@ if (!($settingspage->check_access())) {
 
 $statusmsg = '';
 $errormsg  = '';
-$focus = '';
 
 if ($data = data_submitted() and confirm_sesskey()) {
     if (admin_write_settings($data)) {
@@ -47,7 +46,6 @@ if ($data = data_submitted() and confirm_sesskey()) {
     } else {
         $errormsg = get_string('errorwithsettings', 'admin');
         $firsterror = reset($adminroot->errors);
-        $focus = $firsterror->id;
     }
     $adminroot = admin_get_root(true); //reload tree
     $settingspage = $adminroot->locate($section, true);
@@ -98,13 +96,13 @@ if (empty($SITE->fullname)) {
             $url->param('adminedit', 'on');
         }
         $buttons = $OUTPUT->single_button($url, $caption, 'get');
+        $PAGE->set_button($buttons);
     }
 
     $visiblepathtosection = array_reverse($settingspage->visiblepath);
 
     $PAGE->set_title("$SITE->shortname: " . implode(": ",$visiblepathtosection));
     $PAGE->set_heading($SITE->fullname);
-    $PAGE->set_button($buttons);
     echo $OUTPUT->header();
 
     if ($errormsg !== '') {

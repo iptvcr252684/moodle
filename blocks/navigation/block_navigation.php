@@ -195,6 +195,7 @@ class block_navigation extends block_base {
         
         // Grab the items to display
         $renderer = $this->page->get_renderer('block_navigation');
+        $this->content = new stdClass();
         $this->content->text = $renderer->navigation_tree($navigation, $expansionlimit, $options);
 
         // Set content generated to true so that we know it has been done
@@ -282,7 +283,7 @@ class block_navigation extends block_base {
      * @return string The truncated string
      */
     protected function trim_left($textlib, $string, $length) {
-        return '...'.$textlib->substr($string, $textlib->strlen($string)-$length);
+        return '...'.$textlib->substr($string, $textlib->strlen($string)-$length, $length);
     }
     /**
      * Truncate a string from the right

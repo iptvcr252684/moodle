@@ -1902,6 +1902,7 @@ class core_renderer extends renderer_base {
         $strsaved = get_string('filesaved', 'repository');
         $straddfile = get_string('openpicker', 'repository');
         $strloading  = get_string('loading', 'repository');
+        $strdndenabled = get_string('dndenabled_insentence', 'moodle');
         $icon_progress = $OUTPUT->pix_icon('i/loading_small', $strloading).'';
 
         $currentfile = $options->currentfile;
@@ -1935,7 +1936,9 @@ $icon_progress
 EOD;
         if ($options->env != 'url') {
             $html .= <<<EOD
-    <div id="file_info_{$client_id}" class="mdl-left filepicker-filelist">$currentfile</div>
+    <div id="file_info_{$client_id}" class="mdl-left filepicker-filelist">
+    $currentfile<span id="dndenabled-{$client_id}" style="display: none"> - $strdndenabled </span>
+    </div>
 EOD;
         }
         $html .= '</div>';
@@ -2433,14 +2436,18 @@ EOD;
      *    Settings: Administration > Appearance > Themes > Theme settings
      * and then configuring the custommenu config setting as described.
      *
+     * @param string $custommenuitems - custom menuitems set by theme instead of global theme settings
      * @return string
      */
-    public function custom_menu() {
+    public function custom_menu($custommenuitems = '') {
         global $CFG;
-        if (empty($CFG->custommenuitems)) {
+        if (empty($custommenuitems) && !empty($CFG->custommenuitems)) {
+            $custommenuitems = $CFG->custommenuitems;
+        }
+        if (empty($custommenuitems)) {
             return '';
         }
-        $custommenu = new custom_menu($CFG->custommenuitems, current_language());
+        $custommenu = new custom_menu($custommenuitems, current_language());
         return $this->render_custom_menu($custommenu);
     }
 
