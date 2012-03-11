@@ -1070,7 +1070,11 @@ class assignment_base {
         $mformdata->grade = $this->assignment->grade;
         $mformdata->gradingdisabled = $gradingdisabled;
         $mformdata->nextid = $nextid;
-        $mformdata->submissioncomment= $submission->submissioncomment;
+        if ($assignment->var1) {
+            $mformdata->submissioncomment= '<br/>'.$submission->data1.'<hr/>'.$submission->submissioncomment;
+        } else {
+            $mformdata->submissioncomment= $submission->submissioncomment;
+        }
         $mformdata->submissioncommentformat= FORMAT_HTML;
         $mformdata->submission_content= $this->print_user_files($user->id,true);
         $mformdata->filter = $filter;
