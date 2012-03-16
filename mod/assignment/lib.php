@@ -1070,7 +1070,11 @@ class assignment_base {
         $mformdata->grade = $this->assignment->grade;
         $mformdata->gradingdisabled = $gradingdisabled;
         $mformdata->nextid = $nextid;
-        $mformdata->submissioncomment= $submission->submissioncomment;
+        if ($assignment->var1) {
+            $mformdata->submissioncomment= '<br/>'.$submission->data1.'<hr/>'.$submission->submissioncomment;
+        } else {
+            $mformdata->submissioncomment= $submission->submissioncomment;
+        }
         $mformdata->submissioncommentformat= FORMAT_HTML;
         $mformdata->submission_content= $this->print_user_files($user->id,true);
         $mformdata->filter = $filter;
@@ -2543,6 +2547,7 @@ class mod_assignment_grading_form extends moodleform {
             $mform->addElement('editor', 'submissioncomment_editor', get_string('feedback', 'assignment').':', null, $this->get_editor_options() );
             $mform->setType('submissioncomment_editor', PARAM_RAW); // to be cleaned before display
             $mform->setDefault('submissioncomment_editor', $this->_customdata->submission->submissioncomment);
+//            print_object($this->_customdata->submission);
             //$mform->addRule('submissioncomment', get_string('required'), 'required', null, 'client');
             switch ($this->_customdata->assignment->assignmenttype) {
                 case 'upload' :
