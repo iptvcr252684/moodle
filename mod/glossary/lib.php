@@ -435,10 +435,9 @@ function glossary_cron () {
 /**
  * Return grade for given user or all users.
  *
- * @global object
- * @param int $glossaryid id of glossary
- * @param int $userid optional user id, 0 means all users
- * @return array array of grades, false if none
+ * @param stdClass $glossary A glossary instance
+ * @param int $userid Optional user id, 0 means all users
+ * @return array An array of grades, false if none
  */
 function glossary_get_user_grades($glossary, $userid=0) {
     global $CFG;
@@ -583,10 +582,10 @@ function glossary_rating_validate($params) {
 /**
  * Update activity grades
  *
- * @global object
- * @global object
- * @param object $glossary null means all glossaries (with extra cmidnumber property)
+ * @category grade
+ * @param stdClass $glossary Null means all glossaries (with extra cmidnumber property)
  * @param int $userid specific user only, 0 means all
+ * @param bool $nullifnone If true and the user has no grade then a grade item with rawgrade == null will be inserted
  */
 function glossary_update_grades($glossary=null, $userid=0, $nullifnone=true) {
     global $CFG, $DB;
@@ -642,9 +641,9 @@ function glossary_upgrade_grades() {
 /**
  * Create/update grade item for given glossary
  *
- * @global object
- * @param object $glossary object with extra cmidnumber
- * @param mixed optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @category grade
+ * @param stdClass $glossary object with extra cmidnumber
+ * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
  * @return int, 0 if ok, error code otherwise
  */
 function glossary_grade_item_update($glossary, $grades=NULL) {
@@ -677,7 +676,7 @@ function glossary_grade_item_update($glossary, $grades=NULL) {
 /**
  * Delete grade item for given glossary
  *
- * @global object
+ * @category grade
  * @param object $glossary object
  */
 function glossary_grade_item_delete($glossary) {
@@ -872,7 +871,7 @@ function glossary_get_entries_search($concept, $courseid) {
         $bypassteacher = 0; //This means YES
     }
 
-    $conceptlower = moodle_strtolower(trim($concept));
+    $conceptlower = textlib::strtolower(trim($concept));
 
     $params = array('courseid1'=>$courseid, 'courseid2'=>$courseid, 'conceptlower'=>$conceptlower, 'concept'=>$concept);
 
@@ -1451,9 +1450,11 @@ function glossary_print_attachments($entry, $cm, $type=NULL, $align="left") {
 /**
  * Lists all browsable file areas
  *
- * @param object $course
- * @param object $cm
- * @param object $context
+ * @package  mod_glossary
+ * @category files
+ * @param stdClass $course course object
+ * @param stdClass $cm course module object
+ * @param stdClass $context context object
  * @return array
  */
 function glossary_get_file_areas($course, $cm, $context) {
@@ -1462,14 +1463,75 @@ function glossary_get_file_areas($course, $cm, $context) {
 }
 
 /**
+ * File browsing support for glossary module.
+ *
+ * @param file_browser $browser
+ * @param array $areas
+ * @param stdClass $course
+ * @param cm_info $cm
+ * @param context $context
+ * @param string $filearea
+ * @param int $itemid
+ * @param string $filepath
+ * @param string $filename
+ * @return file_info_stored file_info_stored instance or null if not found
+ */
+function mod_glossary_get_file_info($browser, $areas, $course, $cm, $context, $filearea, $itemid, $filepath, $filename) {
+    global $CFG, $DB;
+
+    if ($context->contextlevel != CONTEXT_MODULE) {
+        return null;
+    }
+
+    if ($filearea === 'attachment' or $filearea === 'entry') {
+        if (!$entry = $DB->get_record('glossary_entries', array('id' => $itemid))) {
+            return null;
+        }
+
+        if (!$glossary = $DB->get_record('glossary', array('id' => $cm->instance))) {
+            return null;
+        }
+
+        if ($glossary->defaultapproval and !$entry->approved and !has_capability('mod/glossary:approve', $context)) {
+            return null;
+        }
+
+        // this trickery here is because we need to support source glossary access
+        if ($entry->glossaryid == $cm->instance) {
+            $filecontext = $context;
+        } else if ($entry->sourceglossaryid == $cm->instance) {
+            if (!$maincm = get_coursemodule_from_instance('glossary', $entry->glossaryid)) {
+                return null;
+            }
+            $filecontext = get_context_instance(CONTEXT_MODULE, $maincm->id);
+        } else {
+            return null;
+        }
+
+        $fs = get_file_storage();
+        $filepath = is_null($filepath) ? '/' : $filepath;
+        $filename = is_null($filename) ? '.' : $filename;
+        if (!($storedfile = $fs->get_file($filecontext->id, 'mod_glossary', $filearea, $itemid, $filepath, $filename))) {
+            return null;
+        }
+        $urlbase = $CFG->wwwroot.'/pluginfile.php';
+        return new file_info_stored($browser, $filecontext, $storedfile, $urlbase, $filearea, $itemid, true, true, false);
+    }
+
+    return null;
+}
+
+/**
  * Serves the glossary attachments. Implements needed access control ;-)
  *
- * @param object $course
- * @param object $cm
- * @param object $context
- * @param string $filearea
- * @param array $args
- * @param bool $forcedownload
+ * @package  mod_glossary
+ * @category files
+ * @param stdClass $course course object
+ * @param stdClass $cm course module object
+ * @param stdClsss $context context object
+ * @param string $filearea file area
+ * @param array $args extra arguments
+ * @param bool $forcedownload whether or not force download
  * @return bool false if file not found, does not return if found - justsend the file
  */
 function glossary_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload) {
@@ -1885,9 +1947,9 @@ function glossary_print_sorting_links($cm, $mode, $sortkey = '',$sortorder = '')
  */
 function glossary_sort_entries ( $entry0, $entry1 ) {
 
-    if ( moodle_strtolower(ltrim($entry0->concept)) < moodle_strtolower(ltrim($entry1->concept)) ) {
+    if ( textlib::strtolower(ltrim($entry0->concept)) < textlib::strtolower(ltrim($entry1->concept)) ) {
         return -1;
-    } elseif ( moodle_strtolower(ltrim($entry0->concept)) > moodle_strtolower(ltrim($entry1->concept)) ) {
+    } elseif ( textlib::strtolower(ltrim($entry0->concept)) > textlib::strtolower(ltrim($entry1->concept)) ) {
         return 1;
     } else {
         return 0;
@@ -2443,9 +2505,8 @@ function glossary_reset_course_form_defaults($course) {
 /**
  * Removes all grades from gradebook
  *
- * @global object
- * @param int $courseid
- * @param string optional type
+ * @param int $courseid The ID of the course to reset
+ * @param string $type The optional type of glossary. 'main', 'secondary' or ''
  */
 function glossary_reset_gradebook($courseid, $type='') {
     global $DB;
@@ -2789,6 +2850,9 @@ function glossary_extend_settings_navigation(settings_navigation $settings, navi
  * Capability check has been done in comment->check_permissions(), we
  * don't need to do it again here.
  *
+ * @package  mod_glossary
+ * @category comment
+ *
  * @param stdClass $comment_param {
  *              context  => context the context object
  *              courseid => int course id
@@ -2804,6 +2868,9 @@ function glossary_comment_permissions($comment_param) {
 
 /**
  * Validate comment parameter before perform other comments actions
+ *
+ * @package  mod_glossary
+ * @category comment
  *
  * @param stdClass $comment_param {
  *              context  => context the context object

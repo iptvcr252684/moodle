@@ -42,6 +42,7 @@
     }
     $PAGE->set_url('/course/search.php', $urlparams);
     $PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
+    $PAGE->set_pagelayout('standard');
 
     if ($CFG->forcelogin) {
         require_login();
@@ -73,7 +74,8 @@
         }
     }
 
-    if (has_capability('moodle/course:create', get_context_instance(CONTEXT_SYSTEM)) && $perpage != 99999) {
+    $capabilities = array('moodle/course:create', 'moodle/category:manage');
+    if (has_any_capability($capabilities, get_context_instance(CONTEXT_SYSTEM)) && ($perpage != 99999)) {
         $perpage = 30;
     }
 
@@ -137,10 +139,15 @@
                     JOIN {block_instances} bi ON bi.parentcontextid = ctx.id
                     WHERE ctx.contextlevel = " . CONTEXT_COURSE . " AND bi.blockname = ?)",
                 array($blockname));
+        $totalcount = count($courses);
+        //Keep only chunk of array which you want to display
+        if ($totalcount > $perpage) {
+            $courses = array_chunk($courses, $perpage, true);
+            $courses = $courses[$page];
+        }
         foreach ($courses as $course) {
             $courses[$course->id] = $course;
         }
-        $totalcount = count($courses);
     }
     // get list of courses containing modules if required
     elseif (!empty($modulelist) and confirm_sesskey()) {
@@ -180,7 +187,6 @@
             if ($PAGE->user_is_editing()) {
                 $string = get_string("turneditingoff");
                 $edit = "off";
-                $perpage = 30;
             } else {
                 $string = get_string("turneditingon");
                 $edit = "on";
@@ -212,10 +218,12 @@
         echo $OUTPUT->heading("$strsearchresults: $totalcount");
         $encodedsearch = urlencode($search);
 
-     ///add the module parameter to the paging bar if they exists
+        // add the module/block parameter to the paging bar if they exists
         $modulelink = "";
         if (!empty($modulelist) and confirm_sesskey()) {
             $modulelink = "&amp;modulelist=".$modulelist."&amp;sesskey=".sesskey();
+        } else if (!empty($blocklist) and confirm_sesskey()) {
+            $modulelink = "&amp;blocklist=".$blocklist."&amp;sesskey=".sesskey();
         }
 
         print_navigation_bar($totalcount, $page, $perpage, $encodedsearch, $modulelink);
@@ -312,13 +320,15 @@
 
                 // checks whether user can do site backup
                 if (has_capability('moodle/backup:backupcourse', $coursecontext)) {
-                    echo "<a title=\"".get_string("backup")."\" href=\"../backup/backup.php?id=$course->id\">\n<img".
+                    $backupurl = new moodle_url('/backup/backup.php', array('id' => $course->id));
+                    echo "<a title=\"".get_string("backup")."\" href=\"".$backupurl."\">\n<img".
                         " src=\"" . $OUTPUT->pix_url('t/backup') . "\" class=\"iconsmall\" alt=\"".get_string("backup")."\" /></a>\n ";
                 }
 
                 // checks whether user can do restore
                 if (has_capability('moodle/restore:restorecourse', $coursecontext)) {
-                    echo "<a title=\"".get_string("restore")."\" href=\"../files/index.php?id=$course->id&amp;wdir=/backupdata\">\n<img".
+                    $restoreurl = new moodle_url('/backup/restorefile.php', array('contextid' => $coursecontext->id));
+                    echo "<a title=\"".get_string("restore")."\" href=\"".$restoreurl."\">\n<img".
                         " src=\"" . $OUTPUT->pix_url('t/restore') . "\" class=\"iconsmall\" alt=\"".get_string("restore")."\" /></a>\n ";
                 }
 
@@ -369,6 +379,17 @@
         if ($perpage != 99999 && $totalcount > $perpage) {
             echo "<center><p>";
             echo "<a href=\"search.php?search=$encodedsearch".$modulelink."&amp;perpage=99999\">".get_string("showall", "", $totalcount)."</a>";
+            echo "</p></center>";
+        } else if ($perpage === 99999) {
+            $defaultperpage = 10;
+            //If user has course:create or category:manage capability the show 30 records.
+            $capabilities = array('moodle/course:create', 'moodle/category:manage');
+            if (has_any_capability($capabilities, get_context_instance(CONTEXT_SYSTEM))) {
+                $defaultperpage = 30;
+            }
+
+            echo "<center><p>";
+            echo "<a href=\"search.php?search=$encodedsearch".$modulelink."&amp;perpage=".$defaultperpage."\">".get_string("showperpage", "", $defaultperpage)."</a>";
             echo "</p></center>";
         }
     }

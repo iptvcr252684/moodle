@@ -16,15 +16,16 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package moodlecore
- * @subpackage backup-moodle2
- * @copyright 2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Defines various restore steps that will be used by common tasks in restore
+ *
+ * @package     core_backup
+ * @subpackage  moodle2
+ * @category    backup
+ * @copyright   2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
- * Define all the restore steps that will be used by common tasks in restore
- */
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * delete old directories and conditionally create backup_temp_ids table
@@ -683,7 +684,7 @@ class restore_create_included_users extends restore_execution_step {
 
     protected function define_execution() {
 
-        restore_dbops::create_included_users($this->get_basepath(), $this->get_restoreid(), $this->get_setting_value('user_files'), $this->task->get_userid());
+        restore_dbops::create_included_users($this->get_basepath(), $this->get_restoreid(), $this->task->get_userid());
     }
 }
 
@@ -1122,6 +1123,12 @@ class restore_course_structure_step extends restore_structure_step {
             $data->idnumber = '';
         } else {
             unset($data->idnumber);
+        }
+
+        // Any empty value for course->hiddensections will lead to 0 (default, show collapsed).
+        // It has been reported that some old 1.9 courses may have it null leading to DB error. MDL-31532
+        if (empty($data->hiddensections)) {
+            $data->hiddensections = 0;
         }
 
         // Only restrict modules if original course was and target site too for new courses

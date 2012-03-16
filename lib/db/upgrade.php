@@ -145,6 +145,74 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2012020200.06);
     }
 
+    if ($oldversion < 2012021700.01) {
+        // Changing precision of field uniquehash on table post to 255
+        $table = new xmldb_table('post');
+        $field = new xmldb_field('uniquehash', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'content');
+
+        // Launch change of precision for field uniquehash
+        $dbman->change_field_precision($table, $field);
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2012021700.01);
+    }
+
+    if ($oldversion < 2012021700.02) {
+        // Somewhere before 1.9 summary and content column in post table were not null. In 1.9+
+        // not null became false.
+        $columns = $DB->get_columns('post');
+
+        // Fix discrepancies in summary field after upgrade from 1.9
+        if (array_key_exists('summary', $columns) && $columns['summary']->not_null != false) {
+            $table = new xmldb_table('post');
+            $summaryfield = new xmldb_field('summary', XMLDB_TYPE_TEXT, 'big', null, null, null, null, 'subject');
+
+            if ($dbman->field_exists($table, $summaryfield)) {
+                $dbman->change_field_notnull($table, $summaryfield);
+            }
+
+        }
+
+        // Fix discrepancies in content field after upgrade from 1.9
+        if (array_key_exists('content', $columns) && $columns['content']->not_null != false) {
+            $table = new xmldb_table('post');
+            $contentfield = new xmldb_field('content', XMLDB_TYPE_TEXT, 'big', null, null, null, null, 'summary');
+
+            if ($dbman->field_exists($table, $contentfield)) {
+                $dbman->change_field_notnull($table, $contentfield);
+            }
+
+        }
+
+        upgrade_main_savepoint(true, 2012021700.02);
+    }
+
+    // The ability to backup user (private) files is out completely - MDL-29248
+    if ($oldversion < 2012030100.01) {
+        unset_config('backup_general_user_files', 'backup');
+        unset_config('backup_general_user_files_locked', 'backup');
+        unset_config('backup_auto_user_files', 'backup');
+
+        upgrade_main_savepoint(true, 2012030100.01);
+    }
+
+    if ($oldversion < 2012030100.02) {
+        // migrate all numbers to signed - it should be safe to interrupt this and continue later
+        upgrade_mysql_fix_unsigned_columns();
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2012030100.02);
+    }
+
+    if ($oldversion < 2012030900.01) {
+        // migrate all texts and binaries to big size - it should be safe to interrupt this and continue later
+        upgrade_mysql_fix_lob_columns();
+
+        // Main savepoint reached
+        upgrade_main_savepoint(true, 2012030900.01);
+    }
+
+
     return true;
 }
 

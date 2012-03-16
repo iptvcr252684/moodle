@@ -1036,8 +1036,7 @@ function data_get_user_grades($data, $userid=0) {
 /**
  * Update activity grades
  *
- * @global object
- * @global object
+ * @category grade
  * @param object $data
  * @param int $userid specific user only, 0 means all
  * @param bool $nullifnone
@@ -1097,9 +1096,9 @@ function data_upgrade_grades() {
 /**
  * Update/create grade item for given data
  *
- * @global object
- * @param object $data object with extra cmidnumber
- * @param mixed optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @category grade
+ * @param stdClass $data A database instance with extra cmidnumber property
+ * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
  * @return object grade_item
  */
 function data_grade_item_update($data, $grades=NULL) {
@@ -1132,7 +1131,7 @@ function data_grade_item_update($data, $grades=NULL) {
 /**
  * Delete grade item for given data
  *
- * @global object
+ * @category grade
  * @param object $data object
  * @return object grade_item
  */
@@ -1250,6 +1249,9 @@ function data_print_template($template, $records, $data, $search='', $page=0, $r
         return;
     }
 
+    // Check whether this activity is read-only at present
+    $readonly = data_in_readonly_period($data);
+
     foreach ($records as $record) {   // Might be just one for the single template
 
     // Replacing tags
@@ -1265,7 +1267,7 @@ function data_print_template($template, $records, $data, $search='', $page=0, $r
     // Replacing special tags (##Edit##, ##Delete##, ##More##)
         $patterns[]='##edit##';
         $patterns[]='##delete##';
-        if (has_capability('mod/data:manageentries', $context) or data_isowner($record->id)) {
+        if (has_capability('mod/data:manageentries', $context) || (!$readonly && data_isowner($record->id))) {
             $replacement[] = '<a href="'.$CFG->wwwroot.'/mod/data/edit.php?d='
                              .$data->id.'&amp;rid='.$record->id.'&amp;sesskey='.sesskey().'"><img src="'.$OUTPUT->pix_url('t/edit') . '" class="iconsmall" alt="'.get_string('edit').'" title="'.get_string('edit').'" /></a>';
             $replacement[] = '<a href="'.$CFG->wwwroot.'/mod/data/view.php?d='
@@ -2079,11 +2081,8 @@ function data_user_can_add_entry($data, $currentgroup, $groupmode, $context = nu
 
     } else if (data_atmaxentries($data)) {
         return false;
-    }
-
-    //if in the view only time window
-    $now = time();
-    if ($now>$data->timeviewfrom && $now<$data->timeviewto) {
+    } else if (data_in_readonly_period($data)) {
+        // Check whether we're in a read-only period
         return false;
     }
 
@@ -2103,6 +2102,21 @@ function data_user_can_add_entry($data, $currentgroup, $groupmode, $context = nu
     }
 }
 
+/**
+ * Check whether the specified database activity is currently in a read-only period
+ *
+ * @param object $data
+ * @return bool returns true if the time fields in $data indicate a read-only period; false otherwise
+ */
+function data_in_readonly_period($data) {
+    $now = time();
+    if (!$data->timeviewfrom && !$data->timeviewto) {
+        return false;
+    } else if (($data->timeviewfrom && $now < $data->timeviewfrom) || ($data->timeviewto && $now > $data->timeviewto)) {
+        return false;
+    }
+    return true;
+}
 
 /**
  * @return bool
@@ -2804,9 +2818,11 @@ function data_export_ods($export, $dataname, $count) {
  * @param int $dataid
  * @param array $fields
  * @param array $selectedfields
+ * @param int $currentgroup group ID of the current group. This is used for
+ * exporting data while maintaining group divisions.
  * @return array
  */
-function data_get_exportdata($dataid, $fields, $selectedfields) {
+function data_get_exportdata($dataid, $fields, $selectedfields, $currentgroup=0) {
     global $DB;
 
     $exportdata = array();
@@ -2826,7 +2842,15 @@ function data_get_exportdata($dataid, $fields, $selectedfields) {
     $line = 1;
     foreach($datarecords as $record) {
         // get content indexed by fieldid
-        if( $content = $DB->get_records('data_content', array('recordid'=>$record->id), 'fieldid', 'fieldid, content, content1, content2, content3, content4') ) {
+        if ($currentgroup) {
+            $select = 'SELECT c.fieldid, c.content, c.content1, c.content2, c.content3, c.content4 FROM {data_content} c, {data_records} r WHERE c.recordid = ? AND r.id = c.recordid AND r.groupid = ?';
+            $where = array($record->id, $currentgroup);
+        } else {
+            $select = 'SELECT fieldid, content, content1, content2, content3, content4 FROM {data_content} WHERE recordid = ?';
+            $where = array($record->id);
+        }
+
+        if( $content = $DB->get_records_sql($select, $where) ) {
             foreach($fields as $field) {
                 $contents = '';
                 if(isset($content[$field->field->id])) {
@@ -2844,9 +2868,11 @@ function data_get_exportdata($dataid, $fields, $selectedfields) {
 /**
  * Lists all browsable file areas
  *
- * @param object $course
- * @param object $cm
- * @param object $context
+ * @package  mod_data
+ * @category files
+ * @param stdClass $course course object
+ * @param stdClass $cm course module object
+ * @param stdClass $context context object
  * @return array
  */
 function data_get_file_areas($course, $cm, $context) {
@@ -2855,14 +2881,88 @@ function data_get_file_areas($course, $cm, $context) {
 }
 
 /**
+ * File browsing support for data module.
+ *
+ * @param file_browser $browser
+ * @param array $areas
+ * @param stdClass $course
+ * @param cm_info $cm
+ * @param context $context
+ * @param string $filearea
+ * @param int $itemid
+ * @param string $filepath
+ * @param string $filename
+ * @return file_info_stored file_info_stored instance or null if not found
+ */
+function mod_data_get_file_info($browser, $areas, $course, $cm, $context, $filearea, $itemid, $filepath, $filename) {
+    global $CFG, $DB;
+
+    if ($context->contextlevel != CONTEXT_MODULE) {
+        return null;
+    }
+
+    if ($filearea === 'content') {
+        if (!$content = $DB->get_record('data_content', array('id'=>$itemid))) {
+            return null;
+        }
+
+        if (!$field = $DB->get_record('data_fields', array('id'=>$content->fieldid))) {
+            return null;
+        }
+
+        if (!$record = $DB->get_record('data_records', array('id'=>$content->recordid))) {
+            return null;
+        }
+
+        if (!$data = $DB->get_record('data', array('id'=>$field->dataid))) {
+            return null;
+        }
+
+        //check if approved
+        if ($data->approval and !$record->approved and !data_isowner($record) and !has_capability('mod/data:approve', $context)) {
+            return null;
+        }
+
+        // group access
+        if ($record->groupid) {
+            $groupmode = groups_get_activity_groupmode($cm, $course);
+            if ($groupmode == SEPARATEGROUPS and !has_capability('moodle/site:accessallgroups', $context)) {
+                if (!groups_is_member($record->groupid)) {
+                    return null;
+                }
+            }
+        }
+
+        $fieldobj = data_get_field($field, $data, $cm);
+
+        $filepath = is_null($filepath) ? '/' : $filepath;
+        $filename = is_null($filename) ? '.' : $filename;
+        if (!$fieldobj->file_ok($filepath.$filename)) {
+            return null;
+        }
+
+        $fs = get_file_storage();
+        if (!($storedfile = $fs->get_file($context->id, 'mod_data', $filearea, $itemid, $filepath, $filename))) {
+            return null;
+        }
+        $urlbase = $CFG->wwwroot.'/pluginfile.php';
+        return new file_info_stored($browser, $context, $storedfile, $urlbase, $filearea, $itemid, true, true, false);
+    }
+
+    return null;
+}
+
+/**
  * Serves the data attachments. Implements needed access control ;-)
  *
- * @param object $course
- * @param object $cm
- * @param object $context
- * @param string $filearea
- * @param array $args
- * @param bool $forcedownload
+ * @package  mod_data
+ * @category files
+ * @param stdClass $course course object
+ * @param stdClass $cm course module object
+ * @param stdClass $context context object
+ * @param string $filearea file area
+ * @param array $args extra arguments
+ * @param bool $forcedownload whether or not force download
  * @return bool false if file not found, does not return if found - justsend the file
  */
 function data_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload) {
@@ -3036,6 +3136,7 @@ function data_extend_settings_navigation(settings_navigation $settings, navigati
  * @return bool
  */
 function data_presets_save($course, $cm, $data, $path) {
+    global $USER;
     $fs = get_file_storage();
     $filerecord = new stdClass;
     $filerecord->contextid = DATA_PRESET_CONTEXT;
@@ -3043,6 +3144,7 @@ function data_presets_save($course, $cm, $data, $path) {
     $filerecord->filearea = DATA_PRESET_FILEAREA;
     $filerecord->itemid = 0;
     $filerecord->filepath = '/'.$path.'/';
+    $filerecord->userid = $USER->id;
 
     $filerecord->filename = 'preset.xml';
     $fs->create_file_from_string($filerecord, data_presets_generate_xml($course, $cm, $data));
@@ -3144,7 +3246,7 @@ function data_presets_export($course, $cm, $data, $tostorage=false) {
     $presetname = clean_filename($data->name) . '-preset-' . gmdate("Ymd_Hi");
     $exportsubdir = "mod_data/presetexport/$presetname";
     make_temp_directory($exportsubdir);
-    $exportdir = "$CFG->dataroot/$exportsubdir";
+    $exportdir = "$CFG->tempdir/$exportsubdir";
 
     // Assemble "preset.xml":
     $presetxmldata = data_presets_generate_xml($course, $cm, $data);
@@ -3242,6 +3344,9 @@ function data_presets_export($course, $cm, $data, $tostorage=false) {
  * Capability check has been done in comment->check_permissions(), we
  * don't need to do it again here.
  *
+ * @package  mod_data
+ * @category comment
+ *
  * @param stdClass $comment_param {
  *              context  => context the context object
  *              courseid => int course id
@@ -3268,6 +3373,9 @@ function data_comment_permissions($comment_param) {
 
 /**
  * Validate comment parameter before perform other comments actions
+ *
+ * @package  mod_data
+ * @category comment
  *
  * @param stdClass $comment_param {
  *              context  => context the context object

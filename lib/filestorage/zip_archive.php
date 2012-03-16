@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -19,10 +18,9 @@
 /**
  * Implementation of zip file archive.
  *
- * @package    core
- * @subpackage filestorage
- * @copyright  2008 Petr Skoda (http://skodak.org)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   core_files
+ * @copyright 2008 Petr Skoda (http://skodak.org)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -61,27 +59,29 @@ function decode_unicoded_hebrew($str) {
 /**
  * zip file archive class.
  *
- * @package    core
- * @subpackage filestorage
- * @copyright  2008 Petr Skoda (http://skodak.org)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   core_files
+ * @category  files
+ * @copyright 2008 Petr Skoda (http://skodak.org)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class zip_archive extends file_archive {
 
-    /** Pathname of archive */
+    /** @var string Pathname of archive */
     protected $archivepathname = null;
 
-    /** Used memory tracking */
+    /** @var int Used memory tracking */
     protected $usedmem = 0;
 
-    /** Iteration position */
+    /** @var int Iteration position */
     protected $pos = 0;
 
-    /** TipArchive instance */
+    /** @var zip_archive TipArchive instance */
     protected $za;
 
     /**
      * Open or create archive (depending on $mode)
+     *
+     * @todo MDL-31048 return error message
      * @param string $archivepathname
      * @param int $mode OPEN, CREATE or OVERWRITE constant
      * @param string $encoding archive local paths encoding
@@ -140,6 +140,7 @@ class zip_archive extends file_archive {
 
     /**
      * Close archive
+     *
      * @return bool success
      */
     public function close() {
@@ -155,8 +156,9 @@ class zip_archive extends file_archive {
 
     /**
      * Returns file stream for reading of content
-     * @param int $index of file
-     * @return resource or false if error
+     *
+     * @param int $index index of file
+     * @return resource|bool file handle or false if error
      */
     public function get_stream($index) {
         if (!isset($this->za)) {
@@ -173,8 +175,9 @@ class zip_archive extends file_archive {
 
     /**
      * Returns file information
-     * @param int $index of file
-     * @return info object or false if error
+     *
+     * @param int $index index of file
+     * @return stdClass info object or false if error
      */
     public function get_info($index) {
         if (!isset($this->za)) {
@@ -210,6 +213,7 @@ class zip_archive extends file_archive {
 
     /**
      * Returns array of info about all files in archive
+     *
      * @return array of file infos
      */
     public function list_files() {
@@ -232,6 +236,7 @@ class zip_archive extends file_archive {
 
     /**
      * Returns number of files in archive
+     *
      * @return int number of files
      */
     public function count() {
@@ -244,6 +249,7 @@ class zip_archive extends file_archive {
 
     /**
      * Add file into archive
+     *
      * @param string $localname name of file in archive
      * @param string $pathname location of file
      * @return bool success
@@ -275,7 +281,7 @@ class zip_archive extends file_archive {
                 $this->close();
                 $res = $this->open($this->archivepathname, file_archive::OPEN, $this->encoding);
                 if ($res !== true) {
-                    print_error('cannotopenzip'); //TODO ??
+                    print_error('cannotopenzip');
                 }
             }
         }
@@ -301,8 +307,9 @@ class zip_archive extends file_archive {
 
     /**
      * Add content of string into archive
+     *
      * @param string $localname name of file in archive
-     * @param string $contents
+     * @param string $contents contents
      * @return bool success
      */
     public function add_file_from_string($localname, $contents) {
@@ -319,11 +326,11 @@ class zip_archive extends file_archive {
         }
 
         if ($this->usedmem > 2097151) {
-        /// this prevents running out of memory when adding many large files using strings
+            // this prevents running out of memory when adding many large files using strings
             $this->close();
             $res = $this->open($this->archivepathname, file_archive::OPEN, $this->encoding);
             if ($res !== true) {
-                print_error('cannotopenzip'); //TODO ??
+                print_error('cannotopenzip');
             }
         }
         $this->usedmem += strlen($contents);
@@ -334,7 +341,8 @@ class zip_archive extends file_archive {
 
     /**
      * Add empty directory into archive
-     * @param string $local
+     *
+     * @param string $localname name of file in archive
      * @return bool success
      */
     public function add_directory($localname) {
@@ -354,7 +362,8 @@ class zip_archive extends file_archive {
 
     /**
      * Returns current file info
-     * @return object
+     *
+     * @return stdClass
      */
     public function current() {
         if (!isset($this->za)) {
@@ -366,6 +375,7 @@ class zip_archive extends file_archive {
 
     /**
      * Returns the index of current file
+     *
      * @return int current file index
      */
     public function key() {
@@ -374,7 +384,6 @@ class zip_archive extends file_archive {
 
     /**
      * Moves forward to next file
-     * @return void
      */
     public function next() {
         $this->pos++;
@@ -382,7 +391,6 @@ class zip_archive extends file_archive {
 
     /**
      * Rewinds back to the first file
-     * @return void
      */
     public function rewind() {
         $this->pos = 0;
@@ -390,7 +398,8 @@ class zip_archive extends file_archive {
 
     /**
      * Did we reach the end?
-     * @return boolean
+     *
+     * @return bool
      */
     public function valid() {
         if (!isset($this->za)) {

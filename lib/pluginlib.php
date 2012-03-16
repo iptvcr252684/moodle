@@ -465,7 +465,8 @@ class plugin_manager {
 
             'scormreport' => array(
                 'basic',
-                'interactions'
+                'interactions',
+                'graphs'
             ),
 
             'theme' => array(
@@ -1461,7 +1462,7 @@ class plugintype_auth extends plugintype_base implements plugin_information {
         }
 
         if (is_null($enabled)) {
-            $enabled = explode(',', $CFG->auth);
+            $enabled = array_flip(explode(',', $CFG->auth));
         }
 
         return isset($enabled[$this->name]);
@@ -1498,7 +1499,7 @@ class plugintype_enrol extends plugintype_base implements plugin_information {
         static $enabled = null;
 
         if (is_null($enabled)) {
-            $enabled = explode(',', $CFG->enrol_plugins_enabled);
+            $enabled = array_flip(explode(',', $CFG->enrol_plugins_enabled));
         }
 
         return isset($enabled[$this->name]);
