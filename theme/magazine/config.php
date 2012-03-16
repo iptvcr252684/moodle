@@ -21,7 +21,7 @@ $THEME->parents = array('canvas','base');
 // changes you want to your theme.
 ////////////////////////////////////////////////////
 
-$THEME->sheets = array('layout','core','colors','css3');
+$THEME->sheets = array('layout','core','colors','css3','autohide');
 
 ////////////////////////////////////////////////////
 // Name of the stylesheet(s) you've including in

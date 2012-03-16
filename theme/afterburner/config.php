@@ -13,7 +13,8 @@ $THEME->sheets = array(
     'afterburner_calendar',
     'afterburner_dock',
     'afterburner_settings',
-    'rtl'
+    'rtl',
+	'autohide'
 );
 
 $THEME->parents_exclude_sheets = array(
