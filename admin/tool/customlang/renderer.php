@@ -87,6 +87,14 @@ class tool_customlang_renderer extends plugin_renderer_base {
             if ($minheight>1) {
                $textareaattributes['style'] = 'min-height:' . (int) 4*$minheight . 'em;';
             }
+            // replace a substring within the local translation with a new one (helps the translator, global search and replace strings)
+            if ( $translator->get_filter('replacewith') AND $translator->get_filter('substring') ){
+                if (is_null($string->local)) {
+                    $string->local = str_replace($translator->get_filter('substring'),$translator->get_filter('replacewith'),$string->master);
+                } else {
+                    $string->local = str_replace($translator->get_filter('substring'),$translator->get_filter('replacewith'),$string->local);
+                }
+            }
             $textarea = html_writer::tag('textarea', s($string->local), $textareaattributes);
             $cells[3] = new html_table_cell($textarea);
             if (!is_null($string->local) and $string->outdated) {

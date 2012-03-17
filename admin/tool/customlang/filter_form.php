@@ -67,6 +67,10 @@ class tool_customlang_filter_form extends moodleform {
         $mform->addElement('text', 'substring', get_string('filtersubstring', 'tool_customlang'));
         $mform->setType('substring', PARAM_RAW);
 
+        // Replace (Substring) with
+        $mform->addElement('text', 'replacewith', get_string('filterreplacewith', 'tool_customlang'));
+        $mform->setType('replacewith', PARAM_RAW);
+
         // String identifier
         $mform->addElement('text', 'stringid', get_string('filterstringid', 'tool_customlang'));
         $mform->setType('stringid', PARAM_STRINGID);

@@ -41,6 +41,7 @@ $string['filteronlyhelps'] = 'Help only';
 $string['filtershowstrings'] = 'Show strings';
 $string['filterstringid'] = 'String identifier';
 $string['filtersubstring'] = 'Only strings containing';
+$string['filterreplacewith'] = 'Searched string, will be replaced with';
 $string['headingcomponent'] = 'Component';
 $string['headinglocal'] = 'Local customisation';
 $string['headingstandard'] = 'Standard text';

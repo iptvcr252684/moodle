@@ -471,6 +471,11 @@ class tool_customlang_translator implements renderable {
     /** @var stdclass */
     protected $filter;
 
+    /* get protected filter variables */
+    public function get_filter($var) {
+        return $this->filter->{$var};
+    }
+
     public function __construct(moodle_url $handler, $lang, $filter, $currentpage = 0) {
         global $DB;
 
