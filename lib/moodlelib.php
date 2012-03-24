@@ -4775,12 +4775,24 @@ function reset_course_userdata($data) {
         }
 
         foreach($data->unenrol_users as $withroleid) {
-            $sql = "SELECT ue.*
-                      FROM {user_enrolments} ue
-                      JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)
-                      JOIN {context} c ON (c.contextlevel = :courselevel AND c.instanceid = e.courseid)
-                      JOIN {role_assignments} ra ON (ra.contextid = c.id AND ra.roleid = :roleid AND ra.userid = ue.userid)";
-            $params = array('courseid'=>$data->courseid, 'roleid'=>$withroleid, 'courselevel'=>CONTEXT_COURSE);
+            if ($withroleid) {
+                $sql = "SELECT ue.*
+                          FROM {user_enrolments} ue
+                          JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)
+                          JOIN {context} c ON (c.contextlevel = :courselevel AND c.instanceid = e.courseid)
+                          JOIN {role_assignments} ra ON (ra.contextid = c.id AND ra.roleid = :roleid AND ra.userid = ue.userid)";
+                $params = array('courseid'=>$data->courseid, 'roleid'=>$withroleid, 'courselevel'=>CONTEXT_COURSE);
+
+            } else {
+                // without any role assigned at course context
+                $sql = "SELECT ue.*
+                          FROM {user_enrolments} ue
+                          JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)
+                          JOIN {context} c ON (c.contextlevel = :courselevel AND c.instanceid = e.courseid)
+                     LEFT JOIN {role_assignments} ra ON (ra.contextid = c.id AND ra.userid = ue.userid)
+                         WHERE ra.id IS NULL";
+                $params = array('courseid'=>$data->courseid, 'courselevel'=>CONTEXT_COURSE);
+            }
 
             $rs = $DB->get_recordset_sql($sql, $params);
             foreach ($rs as $ue) {
@@ -7763,7 +7775,7 @@ function get_plugin_types($fullpaths=true) {
 function get_plugin_list($plugintype) {
     global $CFG;
 
-    $ignored = array('CVS', '_vti_cnf', 'simpletest', 'db', 'yui', 'phpunit');
+    $ignored = array('CVS', '_vti_cnf', 'simpletest', 'db', 'yui', 'tests');
     if ($plugintype == 'auth') {
         // Historically we have had an auth plugin called 'db', so allow a special case.
         $key = array_search('db', $ignored);
