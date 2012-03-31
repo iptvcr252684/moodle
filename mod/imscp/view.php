@@ -71,6 +71,7 @@ echo $OUTPUT->header();
 // verify imsmanifest was parsed properly
 if (!$imscp->structure) {
     echo $OUTPUT->notification(get_string('deploymenterror', 'imscp'), 'notifyproblem');
+    echo $OUTPUT->continue_button("$CFG->dirroot/view.php?id=$cm->id");
     echo $OUTPUT->footer();
     die;
 }
