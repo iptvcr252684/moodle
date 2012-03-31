@@ -97,3 +97,9 @@
 /* Fix for horizontal scroll bar
 --------------------------------*/
 .dir-rtl html {overflow-x: hidden;}
+
+.dir-rtl.path-course-view li.activity form.togglecompletion, .dir-rtl.path-course-view li.activity span.autocompletion {
+    left: auto;
+    right: -20px;
+    padding: 0;
+}
