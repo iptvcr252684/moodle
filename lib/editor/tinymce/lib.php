@@ -137,7 +137,7 @@ class tinymce_texteditor extends texteditor {
                     'theme_advanced_toolbar_align' => "left",
                     'theme_advanced_buttons1' => "tinyautosave,fontselect,fontsizeselect,formatselect",
                     'theme_advanced_buttons1_add' => "|,undo,redo,|,search,replace,|,fullscreen",
-                    'theme_advanced_buttons2' => "bold,italic,underline,strikethrough,sub,sup,|,justifyleft,justifycenter,justifyright",
+                    'theme_advanced_buttons2' => "bold,italic,underline,strikethrough,sub,sup,|,justifyleft,justifycenter,justifyright,justifyfull",
                     'theme_advanced_buttons2_add' => "|,cleanup,removeformat,pastetext,pasteword,|,forecolor,backcolor,|,ltr,rtl",
                     'theme_advanced_buttons3' => "bullist,numlist,outdent,indent,|,link,unlink,moodlenolink,|,image,{$xemoticon}{$xmedia}{$xdragmath}nonbreaking,charmap",
                     'theme_advanced_buttons3_add' => "table,|,code,spellchecker,|,videocapture,audiorecorder",
