@@ -40,12 +40,11 @@ $hascustommenu = (empty($PAGE->layout_options['nocustommenu']) && !empty($custom
 
 $bodyclasses = array();
 if ($showsidepre) {
-    if (right_to_left()) {
+   if (right_to_left()) {
         $bodyclasses[] = 'side-post-only';
     } else {
         $bodyclasses[] = 'side-pre-only';
     }
-    //$bodyclasses[] = 'side-pre-only';
 } else {
     $bodyclasses[] = 'content-only';
 }
@@ -65,10 +64,9 @@ echo $OUTPUT->doctype() ?>
 <?php echo $OUTPUT->standard_top_of_body_html() ?>
 <div id="page">
     <div id="menublock">
-    <?php if ($hascustommenu) { ?>
+        <?php if ($hascustommenu) { ?>
         <div id="custommenu"><?php echo $custommenu; ?></div>
-    <?php
-} ?>
+        <?php } ?>
     </div>
 
 <?php if ($hasheading || $hasnavbar) {
@@ -113,13 +111,15 @@ echo $OUTPUT->doctype() ?>
                     </div>
                 </div>
 
-                <?php if ($hassidepre and !right_to_left()) { ?>
-                <div id="region-pre" class="block-region">
-                   <div class="region-content">
-                        <?php echo $OUTPUT->blocks_for_region('side-pre'); ?>
-                   </div>
-                </div>
-                <?php } ?>
+                    <?php
+                if ($hassidepre and !right_to_left()) { ?>
+                    <div id="region-pre" class="block-region">
+                        <div class="region-content">
+                            <?php echo $OUTPUT->blocks_for_region('side-pre');?>
+                        </div>
+                    </div>
+                    <?php
+                } ?>
 
                 <?php if ($hassidepre and right_to_left() ) { ?>
                 <div id="region-post" class="block-region">
@@ -129,7 +129,6 @@ echo $OUTPUT->doctype() ?>
                 </div>
                 <?php } ?>
 
-                </div>
             </div>
         </div>
     </div>
