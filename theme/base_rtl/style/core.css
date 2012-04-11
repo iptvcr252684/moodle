@@ -5,12 +5,10 @@ a, a:link, a:visited {
     text-decoration: none;
 }
 a:active, a:hover {
-    color: #abc;
-    border-bottom: 1px dashed #036;
+    color: #036;
 }
 a:focus {
     color: #c03;
-    border-bottom: 1px dashed #c06;
 }
 h1.headermain {
     font: 1.5em/1.1 sans-serif;
@@ -133,21 +131,3 @@ h1.headermain {
     font-size: 25px;
     margin: 1em 0 0;
 }
-
-
-/* add some visual borders to make the course more usable [nadavkav 1/4/2012]*/
-.block .header { border:1px solid;
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
-    border-radius: 3px;}
-
-.block .header .block_action { padding-top: 3px; }
-
-.course-content ul.topics li.section .content { border-top: 3px double;}
-
-#completionprogressid, .headingblock {display: none;}
-
-#page-content, #region-main-box, #region-pre-box { margin-top: 5px;}
-
-#page { width: 100%;  margin: 0% auto;}
-

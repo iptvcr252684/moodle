@@ -98,16 +98,42 @@
 --------------------------------*/
 .dir-rtl html {overflow-x: hidden;}
 
-.dir-rtl.path-course-view li.activity form.togglecompletion, .dir-rtl.path-course-view li.activity span.autocompletion {
+/* Auto-completion Toggle-completion
+------------------------------------*/
+.dir-rtl.path-course-view li.activity form.togglecompletion,
+.dir-rtl.path-course-view li.activity span.autocompletion {
     left: auto;
     right: -20px;
     padding: 0;
 }
 
-/* right align the DOCK panel */
-.dir-rtl #dockeditempanel { right: 100%; }
-#dock { left:auto; right: 0px;}
-body.has_dock { margin-left: 0px; margin-right: 30px;}
+/* right align the DOCK panel
+------------------------------*/
+.dir-rtl #dockeditempanel {
+    right: 100%;
+}
+#dock {
+    left:auto;
+    right: 0px;
+    border-left: 1px solid #DDD;
+}
+#dock .dockedtitle {
+    border-bottom: 1px solid #DDD;
+    border-top: 1px solid #EEE;
+    cursor: pointer;
+}
+body.has_dock {
+    margin-left: 0px;
+    margin-right: 30px;
+}
 
-/* right align the Menu element */
-.yui3-menu-horizontal li { float: right;}
+/* padding the link letters when filtering by first and last name */
+.dir-rtl .initialbar a {padding-right: 2px;}
+
+/* right align table box in course report and admin pages */
+.dir-rtl .boxaligncenter, #page-admin-course-index.dir-rtl .editcourse  { margin-right: 0;}
+
+/* switch table's cell's right and left alignment in rtl mode */
+.dir-rtl td[align=left] {text-align: right;}
+.dir-rtl td[align=right] {text-align: left;}
+
