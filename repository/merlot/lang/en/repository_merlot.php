@@ -28,3 +28,4 @@ $string['licensekey'] = 'License key';
 $string['pluginname_help'] = 'Merlot.org';
 $string['pluginname'] = 'Merlot.org';
 $string['merlot:view'] = 'View the Merlot repository';
+$string['instruction'] = 'You can get your License Key from <a href="http://taste.merlot.org/merlottechnology.html#requestws">Merlot developers</a>';
