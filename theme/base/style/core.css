@@ -498,6 +498,7 @@ body.tag .managelink {padding: 5px;}
 .file-picker .fp-list li {border-bottom:1px dotted gray;margin-bottom: 1em;}
 .file-picker .fp-repo-name {display:block;padding: .5em;margin-bottom: .5em;}
 .file-picker .fp-pathbar {margin: .4em;border-bottom: 1px dotted gray;}
+.dir-rtl .file-picker .fp-pathbar {text-align: right;}
 .file-picker .fp-pathbar a {padding: .4em;}
 .file-picker .fp-rename-form {text-align:center;}
 .file-picker .fp-rename-form p {margin: 1em;}
@@ -518,6 +519,11 @@ body.tag .managelink {padding: 5px;}
 .filepicker-filelist {padding: 5px;margin: 6px 0;background: #E9F4FF;border: #AACCEE 1px solid}
 /* file picker search dialog */
 .file-picker div.bd {text-align:left;}
+
+.dir-rtl .file-picker div.bd {text-align:right;}
+.dir-rtl #filemenu .yuimenuitemlabel {text-align: right;}
+.dir-rtl .filepicker .yui-layout-unit-left {left:500px;}
+.dir-rtl .filepicker .yui-layout-unit-center {left:0px;}
 
 /**
  * File Manager
@@ -825,8 +831,8 @@ sup {vertical-align: super;}
 .dir-rtl .ygtvcancel {background-position: 0 -8822px;}
 .dir-rtl .ygtvcancel:hover {background-position: 0 -8866px;}
 
-.dir-rtl #yui-gen4.yui-layout-unit-left  {left:500px !important;}
-.dir-rtl #yui-gen6.yui-layout-unit-center {left:0px !important;}
+.dir-rtl .file-picker .yui-layout-unit-left  {left:500px !important;}
+.dir-rtl .file-picker .yui-layout-unit-center {left:0px !important;}
 .dir-rtl.yui-skin-sam .yui-panel .hd {text-align:left;}
 .dir-rtl .yui-skin-sam .yui-layout .yui-layout-unit div.yui-layout-bd {text-align:right;}
 
@@ -908,3 +914,7 @@ sup {vertical-align: super;}
 
 #page-admin-grade-edit-scale-edit.dir-rtl .error input#id_name {margin-right: 170px;}
 .initialbar a {padding-right: 2px;}
+
+/* Invert alignment of all hard coded table cell internal alignment, when in RTL mode */
+.dir-rtl td[align="left"] {text-align: right;}
+.dir-rtl td[align="right"] {text-align: left;}
