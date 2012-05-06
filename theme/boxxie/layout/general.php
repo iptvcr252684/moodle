@@ -111,7 +111,7 @@ echo $OUTPUT->doctype() ?>
                        } ?>
                        </div>
                    </div>
-                   <?php } ?>
+                <?php } ?>
 
             </div>
         </div>
