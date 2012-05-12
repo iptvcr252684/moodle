@@ -38,8 +38,8 @@ $THEME->name = 'arialist';
 
 
 $THEME->parents = array(
-	'canvas',
-	'base',
+    'canvas',
+    'base',
 );
 
 /////////////////////////////////////////////////////
@@ -67,12 +67,12 @@ $THEME->sheets = array(
 ////////////////////////////////////////////////////
 
 $THEME->parents_exclude_sheets = array(
-		'base'=>array(
-			'pagelayout',
-		),
-		'canvas'=>array(
-			'pagelayout',
-		),
+        'base'=>array(
+            'pagelayout',
+        ),
+        'canvas'=>array(
+            'pagelayout',
+        ),
 );
 
 
