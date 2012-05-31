@@ -20,7 +20,7 @@ if (!$showsidepre) {
 }
 
 if ($hascustommenu) {
-    $bodyclasses[] = 'has_custom_menu';
+    $bodyclasses[] = 'has-custom-menu';
 }
 
 /************************************************************************************************/
