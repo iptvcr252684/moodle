@@ -523,3 +523,6 @@ strong em, em strong{
 .initialbar a {
     padding:0 2px;
 }
+
+/* RTL rules */
+.dir-rtl.pagelayout-report #report-main-content { width: 75%;}
