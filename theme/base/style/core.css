@@ -1015,6 +1015,12 @@ sup {vertical-align: super;}
     max-height: 550px;
 }
 
+.dir-rtl #choosercontainer #chooseform .instruction, .jsenabled #choosercontainer #chooseform .typesummary {
+    left: 0px;
+    right: 18.5em;
+    border-right: 1px solid grey;
+}
+
 /* Selected option settings */
 .jsenabled #choosercontainer #chooseform .instruction,
 #choosercontainer #chooseform .selected .typesummary {
