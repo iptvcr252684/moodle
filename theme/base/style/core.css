@@ -496,11 +496,13 @@ body.tag .managelink {padding: 5px;}
 .file-picker .fp-searchbar {float:right;}
 .file-picker .fp-viewbar {width:300px;float:left;}
 .file-picker .fp-toolbar {padding: .8em;background: #FFFFCC;text-align:center;margin: 3px;}
+.dir-rtl .file-picker .fp-toolbar {padding:0;}
 .file-picker .fp-toolbar a {padding: 0 .5em;}
 .file-picker .fp-list {list-style-type:none;padding:0;float:left;width:100%;margin:0;}
-.dir-rtl .file-picker .fp-list {text-align:right;}
+.dir-rtl .file-picker .fp-list {text-align:right; margin-left: 20px;}
 .file-picker .fp-list li {border-bottom:1px dotted gray;margin-bottom: 1em;}
 .file-picker .fp-repo-name {display:block;padding: .5em;margin-bottom: .5em;}
+.dir-rtl .file-picker .fp-repo-name {display:inline;}
 .file-picker .fp-pathbar {margin: .4em;border-bottom: 1px dotted gray;}
 .dir-rtl .file-picker .fp-pathbar {text-align: right;}
 .file-picker .fp-pathbar a {padding: .4em;}
@@ -534,7 +536,9 @@ body.tag .managelink {padding: 5px;}
  */
 .filemanager-toolbar {margin: 5px 0;}
 .filemanager-toolbar a {border: 1px solid #AACCEE;background: #F4FAFF;color: black;padding: 3px;}
+.dir-rtl .filemanager-toolbar a {padding:0px;}
 .filemanager-toolbar a:hover {background: #FFFFFF;}
+.dir-rtl .filemanager-toolbar a:hover {background:none; border:2px solid black}
 .filemanager-toolbar .helplink a {border: 0px; background: transparent;}
 .fm-breadcrumb {margin:0;}
 .filemanager-container {padding: 5px;margin: 6px 0;background: #E9F4FF;border: #AACCEE 1px solid}
