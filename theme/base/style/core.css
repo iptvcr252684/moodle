@@ -460,10 +460,12 @@ body.tag .managelink {padding: 5px;}
 .file-picker .ygtvtmh {background: url([[pix:moodle|y/tmh]]) 0 0 no-repeat;width:34px;height:22px;cursor:pointer;}
 /* first or middle sibling, expandable */
 .file-picker .ygtvtp {background: url([[pix:moodle|y/tp]]) 0 0 no-repeat;width:34px;height:22px;cursor:pointer;}
+.dir-rtl .file-picker .ygtvtp {background: url([[pix:moodle|y/tp_rtl]]) 0 0 no-repeat;width:34px;height:22px;cursor:pointer;}
 /* first or middle sibling, expandable, hover */
 .file-picker .ygtvtph {background: url([[pix:moodle|y/tph]]) 0 0 no-repeat;width:34px;height:22px;cursor:pointer;}
 /* last sibling, no children */
 .file-picker .ygtvln {background: url([[pix:moodle|y/ln]]) 0 0 no-repeat;width:17px;height:22px;}
+.dir-rtl .file-picker .ygtvln {background: url([[pix:moodle|y/ln_rtl]]) 0 0 no-repeat;width:17px;height:22px;}
 /* Last sibling, collapsable */
 .file-picker .ygtvlm {background: url([[pix:moodle|y/lm]]) 0 0 no-repeat;width:34px;height:22px;cursor:pointer;}
 /* Last sibling, collapsable, hover */
