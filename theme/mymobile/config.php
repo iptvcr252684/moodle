@@ -37,7 +37,8 @@ $THEME->sheets = array(
     'jmobile11',
     'jmobile11_rtl',
     'core',
-    'media'
+    'media',
+    'tablet', // Special CSS rules for tables
 );
 
 // Exclude parent sheets that we don't want
