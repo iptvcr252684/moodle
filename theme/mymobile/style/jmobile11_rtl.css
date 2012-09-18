@@ -52,3 +52,5 @@
 .path-mod-quiz.dir-rtl .que .control {
     width: 75%;
 }
+
+.dir-rtl .coursebox .ui-btn-inner { text-align: right;}
