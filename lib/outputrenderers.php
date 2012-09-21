@@ -1212,7 +1212,7 @@ class core_renderer extends renderer_base {
         } else {
             throw new coding_exception('The cancel param to $OUTPUT->confirm() must be either a URL (string/moodle_url) or a single_button instance.');
         }
-
+        $continue->autofocus = 'autofocus';
         $output = $this->box_start('generalbox', 'notice');
         $output .= html_writer::tag('p', $message);
         $output .= html_writer::tag('div', $this->render($continue) . $this->render($cancel), array('class' => 'buttons'));
@@ -1256,7 +1256,8 @@ class core_renderer extends renderer_base {
         $attributes = array('type'     => 'submit',
                             'value'    => $button->label,
                             'disabled' => $button->disabled ? 'disabled' : null,
-                            'title'    => $button->tooltip);
+                            'title'    => $button->tooltip,
+                            'autofocus'    => $button->autofocus ? 'autofocus' : null);
 
         if ($button->actions) {
             $id = html_writer::random_id('single_button');
