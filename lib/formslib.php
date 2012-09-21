@@ -1804,6 +1804,7 @@ function qf_errorHandler(element, _qfMsg) {
       errorSpan.id = \'id_error_\'+element.name;
       errorSpan.className = "error";
       element.parentNode.insertBefore(errorSpan, element.parentNode.firstChild);
+      document.getElementById(errorSpan.id).scrollIntoView();
     }
 
     while (errorSpan.firstChild) {

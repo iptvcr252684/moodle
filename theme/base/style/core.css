@@ -978,3 +978,5 @@ sup {vertical-align: super;}
     -webkit-box-shadow: 0px 0px 10px 0px #CCCCCC;
     -moz-box-shadow: 0px 0px 10px 0px #CCCCCC;
 }
+
+.error input[type=text] {background-color: #fafad2;}
