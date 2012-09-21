@@ -2271,6 +2271,7 @@ EOD;
         }
         $button = new single_button($url, get_string('continue'), 'get');
         $button->class = 'continuebutton';
+        $button->autofocus = 'autofocus';
 
         return $this->render($button);
     }
