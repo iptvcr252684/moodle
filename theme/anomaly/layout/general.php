@@ -14,13 +14,13 @@ $bodyclasses = array();
 if ($showsidepre && !$showsidepost) {
     if (!right_to_left()) {
         $bodyclasses[] = 'side-pre-only';
-    }else{
+    } else {
         $bodyclasses[] = 'side-post-only';
     }
 } else if ($showsidepost && !$showsidepre) {
     if (!right_to_left()) {
         $bodyclasses[] = 'side-post-only';
-    }else{
+    } else {
         $bodyclasses[] = 'side-pre-only';
     }
 } else if (!$showsidepost && !$showsidepre) {
