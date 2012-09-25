@@ -29,7 +29,10 @@ div.gradingsummary .generaltable {
 .submissionsummarytable {
     margin-top: 1em;
 }
-
+/* submission status column*/
+#page-mod-assign-view.dir-rtl th.header.c4 {display: table-caption;width:100px;}
+/* file names column */
+#page-mod-assign-view.dir-rtl th.header.c7 {display: table-caption;width:200px;}
 
 div.submissionsummarytable table tbody tr td.c0 {
     width: 30%;
