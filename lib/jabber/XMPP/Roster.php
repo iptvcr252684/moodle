@@ -118,15 +118,17 @@ class Roster {
 	 * @param string $status
 	*/
 	public function setPresence($presence, $priority, $show, $status) {
-		list($jid, $resource) = explode("/", $presence);
+		$presence = explode('/', $presence, 2);
+		$jid = $presence[0];
+		$resource = isset($presence[1]) ? $presence[1] : '';
 		if ($show != 'unavailable') {
 			if (!$this->isContact($jid)) {
 				$this->addContact($jid, 'not-in-roster');
 			}
-			$resource = $resource ? $resource : '';
 			$this->roster_array[$jid]['presence'][$resource] = array('priority' => $priority, 'show' => $show, 'status' => $status);
 		} else { //Nuke unavailable resources to save memory
 			unset($this->roster_array[$jid]['resource'][$resource]);
+			unset($this->roster_array[$jid]['presence'][$resource]);
 		}
 	}
 
@@ -137,7 +139,7 @@ class Roster {
 	 * @param string $jid
 	 */
 	public function getPresence($jid) {
-		$split = explode("/", $jid);
+		$split = explode('/', $jid, 2);
 		$jid = $split[0];
 		if($this->isContact($jid)) {
 			$current = array('resource' => '', 'active' => '', 'priority' => -129, 'show' => '', 'status' => ''); //Priorities can only be -128 = 127
