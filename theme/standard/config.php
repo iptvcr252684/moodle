@@ -43,6 +43,9 @@ $THEME->sheets = array(
     'message',
     'modules',
     'question',
-    'css3'      /** Sets up CSS 3 + browser specific styles **/
+    'css3',      /** Sets up CSS 3 + browser specific styles **/
+    'menu',
 );
 $THEME->enable_dock = true;
+
+$THEME->rendererfactory = 'theme_overridden_renderer_factory';
