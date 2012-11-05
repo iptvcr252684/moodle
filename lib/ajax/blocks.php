@@ -57,6 +57,12 @@ switch ($action) {
     case 'move':
         // Loading blocks and instances for the region
         $PAGE->blocks->load_blocks();
+
+        if (right_to_left()) { // support block column switch in RTL mode
+            $bui_newregion = ($bui_newregion == 'side-post') ? 'side-pre' : 'side-post';
+            $_POST['bui_newregion'] = $bui_newregion;
+        }
+
         $instances = $PAGE->blocks->get_blocks_for_region($bui_newregion);
 
         $bui_newweight = null;
