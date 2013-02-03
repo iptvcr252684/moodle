@@ -70,3 +70,4 @@ $string['showinggraded'] = 'Showing only the attempt graded for each user.';
 $string['showinggradedandungraded'] = 'Showing graded and ungraded attempts for each user. The one attempt for each user that is graded is highlighted. The grading method for this quiz is {$a}.';
 $string['studentingroup'] = '\'{$a->coursestudent}\' in group \'{$a->groupname}\'';
 $string['studentingrouplong'] = '\'{$a->coursestudent}\' in this group';
+$string['closeattemptsselected'] = 'Close Attempts';

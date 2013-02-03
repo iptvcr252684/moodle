@@ -558,5 +558,7 @@ abstract class quiz_attempts_report_table extends table_sql {
             $PAGE->requires->event_handler('#deleteattemptsbutton', 'click', 'M.util.show_confirm_dialog',
                     array('message' => get_string('deleteattemptcheck', 'quiz')));
         }
+        echo '<input type="submit" id="closeattemptsbutton" name="closeattempts" value="' .
+            get_string('closeattemptsselected', 'quiz_overview') . '"/>';
     }
 }

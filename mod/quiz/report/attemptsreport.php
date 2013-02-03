@@ -292,6 +292,13 @@ abstract class quiz_attempts_report extends quiz_default_report {
                     redirect($redirecturl);
                 }
             }
+            if (optional_param('closeattempts', 0, PARAM_BOOL) && confirm_sesskey()) {
+                if ($attemptids = optional_param_array('attemptid', array(), PARAM_INT)) {
+                    //require_capability('mod/quiz:deleteattempts', $this->context);
+                    $this->close_selected_attempts($quiz, $cm, $attemptids, $allowed);
+                    redirect($redirecturl);
+                }
+            }
         }
     }
 
@@ -321,6 +328,35 @@ abstract class quiz_attempts_report extends quiz_default_report {
             add_to_log($quiz->course, 'quiz', 'delete attempt', 'report.php?id=' . $cm->id,
                     $attemptid, $cm->id);
             quiz_delete_attempt($attempt, $quiz);
+        }
+    }
+
+    /**
+     * Close selected quiz attempts
+     * @param object $quiz the quiz settings. Attempts that don't belong to
+     * this quiz are not closed.
+     * @param object $cm the course_module object.
+     * @param array $attemptids the list of attempt ids to delete.
+     * @param array $allowed This list of userids that are visible in the report.
+     *      Users can only delete attempts that they are allowed to see in the report.
+     *      Empty means all users.
+     */
+    protected function close_selected_attempts($quiz, $cm, $attemptids, $allowed) {
+        global $DB;
+
+        foreach ($attemptids as $attemptid) {
+            $attempt = $DB->get_record('quiz_attempts', array('id' => $attemptid));
+            if (!$attempt || $attempt->quiz != $quiz->id || $attempt->preview != 0) {
+                // Ensure the attempt exists, and belongs to this quiz. If not skip.
+                continue;
+            }
+            if ($allowed && !in_array($attempt->userid, $allowed)) {
+                // Ensure the attempt belongs to a student included in the report. If not skip.
+                continue;
+            }
+            add_to_log($quiz->course, 'quiz', 'close attempt', 'report.php?id=' . $cm->id,
+                $attemptid, $cm->id);
+            quiz_close_attempt($attempt, $quiz);
         }
     }
 }

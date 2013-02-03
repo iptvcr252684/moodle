@@ -142,6 +142,28 @@ function quiz_get_user_attempt_unfinished($quizid, $userid) {
 }
 
 /**
+ * Close a quiz attempt.
+ * @param mixed $attempt an integer attempt id or an attempt object
+ *      (row of the quiz_attempts table).
+ * @param object $quiz the quiz object.
+ */
+function quiz_close_attempt($attempt, $quiz) {
+    global $DB;
+    if (is_numeric($attempt)) {
+        if (!$attempt = $DB->get_record('quiz_attempts', array('id' => $attempt))) {
+            return;
+        }
+    }
+
+    if ($attempt->quiz != $quiz->id) {
+        debugging("Trying to delete attempt $attempt->id which belongs to quiz $attempt->quiz " .
+            "but was passed quiz $quiz->id.");
+        return;
+    }
+    $DB->set_field('quiz_attempts', 'state', quiz_attempt::FINISHED, array('id' => $attempt->id));
+}
+
+/**
  * Delete a quiz attempt.
  * @param mixed $attempt an integer attempt id or an attempt object
  *      (row of the quiz_attempts table).
