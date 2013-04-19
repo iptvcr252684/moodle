@@ -140,7 +140,7 @@ background: #E2E2E2;filter: progid:DXImageTransform.Microsoft.gradient(startColo
 /*.file-picker .fp-treeview .fp-folder .fp-icon, .filemanager .fp-treeview .fp-folder .fp-icon {}*/
 /* first or middle sibling, no children */
 .file-picker .ygtvtn, .filemanager .ygtvtn {background: url('[[pix:moodle|y/tn]]') 0px 0px no-repeat;width:17px;height:22px;}
-.dir-rtl .file-picker .ygtvtn {background: url('[[pix:moodle|y/tn_rtl]]') 0px 0px no-repeat;width:17px;height:22px;}
+.dir-rtl .file-picker .ygtvtn, .dir-rtl .filemanager .ygtvtn {background: url('[[pix:moodle|y/tn_rtl]]') 0px 0px no-repeat;width:17px;height:22px;}
 /* first or middle sibling, collapsable */
 .file-picker .ygtvtm, .filemanager .ygtvtm {background: url('[[pix:moodle|y/tm]]') 0px 10px no-repeat;width:13px;height:12px;cursor:pointer;}
 /* first or middle sibling, collapsable, hover */
@@ -153,7 +153,7 @@ background: #E2E2E2;filter: progid:DXImageTransform.Microsoft.gradient(startColo
 .dir-rtl .file-picker .ygtvtph {background: url('[[pix:moodle|y/tp_rtl]]') 0px 10px no-repeat;width:13px;height:22px;cursor:pointer;}
 /* last sibling, no children */
 .file-picker .ygtvln, .filemanager .ygtvln {background: url('[[pix:moodle|y/ln]]') 0px 0px no-repeat;width:17px;height:22px;}
-.dir-rtl .file-picker .ygtvln {background: url('[[pix:moodle|y/ln_rtl]]') 0px 0px no-repeat;width:17px;height:22px;}
+.dir-rtl .file-picker .ygtvln, .dir-rtl .filemanager .ygtvln  {background: url('[[pix:moodle|y/ln_rtl]]') 0px 0px no-repeat;width:17px;height:22px;}
 /* Last sibling, collapsable */
 .file-picker .ygtvlm, .filemanager .ygtvlm {background: url('[[pix:moodle|y/lm]]') 0px 10px no-repeat;width:13px;height:12px;cursor:pointer;}
 /* Last sibling, collapsable, hover */
