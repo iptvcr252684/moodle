@@ -48,6 +48,16 @@ class qtype_multichoice_edit_form extends question_edit_form {
                 get_string('answerhowmany', 'qtype_multichoice'), $menu);
         $mform->setDefault('single', 1);
 
+        $layoutmenu = array(
+                get_string('chooselayout', 'qtype_multichoice'),
+                get_string('layoutvertical', 'qtype_multichoice'),
+                get_string('layouthorizontal', 'qtype_multichoice'),
+            );
+        $mform->addElement('select', 'layout',
+                get_string('layout', 'qtype_multichoice'), $layoutmenu);
+        $mform->setDefault('layout', 1); // 1 = qtype_multichoice_base::LAYOUT_VERTICAL
+
+
         $mform->addElement('advcheckbox', 'shuffleanswers',
                 get_string('shuffleanswers', 'qtype_multichoice'), null, null, array(0, 1));
         $mform->addHelpButton('shuffleanswers', 'shuffleanswers', 'qtype_multichoice');
@@ -90,6 +100,7 @@ class qtype_multichoice_edit_form extends question_edit_form {
 
         if (!empty($question->options)) {
             $question->single = $question->options->single;
+            $question->layout = $question->options->layout;
             $question->shuffleanswers = $question->options->shuffleanswers;
             $question->answernumbering = $question->options->answernumbering;
         }
