@@ -277,6 +277,7 @@ $string['sendsubmissionreceipts'] = 'Send submission receipt to students';
 $string['sendsubmissionreceipts_help'] = 'This switch will enable submission receipts for students. Students will receive a notification every time they successfully submit an assignment';
 $string['settings'] = 'Assignment settings';
 $string['showrecentsubmissions'] = 'Show recent submissions';
+$string['status'] = 'Status';
 $string['submissioncopiedtext'] = 'You have made a copy of your previous
 assignment submission for \'{$a->assignment}\'
 
