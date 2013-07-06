@@ -30,6 +30,8 @@
 .course-content .section .activity .commands { white-space: nowrap; display: inline; }
 .sitetopic .section .activity .commands img,
 .course-content .section .activity .commands img { vertical-align: baseline; padding: 0 2px; }
+.dir-rtl .sitetopic .section .activity .commands,
+.dir-rtl .course-content .section .activity .commands {position: relative;}
 .sitetopic .section li.activity,
 .course-content .section li.activity {padding: .2em;}
 .section .activity .activityinstance .groupinglabel { padding-left: .45em; }
