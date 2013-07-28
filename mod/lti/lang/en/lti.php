@@ -97,6 +97,8 @@ $string['configpreferwidget'] = 'Set widget as default launch';
 $string['configpreferwidth'] = 'Default preferred width';
 $string['configresourceurl'] = 'Default resource URL';
 $string['configtoolurl'] = 'Default remote tool URL';
+$string['configxmlurl'] = 'Tool configuration (XML) URL';
+$string['configxmlurl_help'] = 'A list of tool configuration (XML) URL(s) can be found on the <a target="_new" href="https://www.edu-apps.org/">edu-apps.org</a> catalog. Click any tool icon on the list to get its configuration URL. After pasting it back here, in Moodle, click the "+" icon to add this tool to the list of tools on this Moodle system.';
 $string['configtypes'] = 'Enable LTI applications';
 $string['configured'] = 'Configured';
 $string['course_tool_types'] = 'Course tool types';

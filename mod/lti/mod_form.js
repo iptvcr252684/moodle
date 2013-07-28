@@ -345,8 +345,9 @@
                 }
             });
 
+            var configxmlurl = Y.one('#id_lti_configxmlurl');
             addIcon.on('click', function(e){
-                window.open(self.settings.instructor_tool_type_edit_url + '&action=add', 'add_tool');
+                window.open(self.settings.instructor_tool_type_edit_url + '&action=add' + '&url='+configxmlurl.get('value'), 'add_tool');
             });
 
             deleteIcon.on('click', function(e){

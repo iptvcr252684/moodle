@@ -67,6 +67,7 @@ class mod_lti_edit_types_form extends moodleform{
         $mform->setType('lti_typename', PARAM_TEXT);
         $mform->addHelpButton('lti_typename', 'typename', 'lti');
         $mform->addRule('lti_typename', null, 'required', null, 'client');
+        $mform->setDefault('lti_typename',$this->_customdata->tool_id);
 
         $mform->addElement('text', 'lti_toolurl', get_string('toolurl', 'lti'), array('size' => '64'));
         $mform->setType('lti_toolurl', PARAM_TEXT);
@@ -76,15 +77,18 @@ class mod_lti_edit_types_form extends moodleform{
         } else {
             $mform->disabledIf('lti_toolurl', null);
         }
+        $mform->setDefault('lti_toolurl',$this->_customdata->launch_url);
 
         if (!$istool) {
             $mform->addElement('text', 'lti_resourcekey', get_string('resourcekey_admin', 'lti'));
             $mform->setType('lti_resourcekey', PARAM_TEXT);
             $mform->addHelpButton('lti_resourcekey', 'resourcekey_admin', 'lti');
+            $mform->setDefault('lti_resourcekey',$this->_customdata->tool_id);
 
             $mform->addElement('passwordunmask', 'lti_password', get_string('password_admin', 'lti'));
             $mform->setType('lti_password', PARAM_TEXT);
             $mform->addHelpButton('lti_password', 'password_admin', 'lti');
+            $mform->setDefault('lti_password',$this->_customdata->privacy_level);
         }
 
         if ($istool) {

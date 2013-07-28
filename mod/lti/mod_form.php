@@ -94,6 +94,10 @@ class mod_lti_mod_form extends moodleform_mod {
         $mform->setAdvanced('showdescriptionlaunch');
         $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
+        $mform->addElement('text', 'lti_configxmlurl', get_string('configxmlurl', 'lti'), array('size'=>'64'));
+        $mform->setType('lti_configxmlurl', PARAM_TEXT);
+        $mform->addHelpButton('lti_configxmlurl', 'configxmlurl', 'lti');
+
         // Tool settings.
         $tooltypes = $mform->addElement('select', 'typeid', get_string('external_tool_type', 'lti'), array());
         $mform->addHelpButton('typeid', 'external_tool_type', 'lti');

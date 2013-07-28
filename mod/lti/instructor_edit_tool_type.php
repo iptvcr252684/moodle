@@ -27,6 +27,7 @@ require_once('../../config.php');
 require_once($CFG->dirroot.'/mod/lti/edit_form.php');
 
 $courseid = required_param('course', PARAM_INT);
+$configurl = optional_param('url', '', PARAM_URL);
 
 require_login($courseid, false);
 $url = new moodle_url('/mod/lti/instructor_edit_tool_type.php');
@@ -48,7 +49,26 @@ if (!empty($typeid)) {
     }
 }
 
-$form = new mod_lti_edit_types_form();
+$form_setup = array();
+
+// Read Tool configuration XML.
+if (!empty($configurl)) {
+    $toolxmlconfig = file_get_contents($configurl);
+
+    $toolconfig = new SimpleXMLElement($toolxmlconfig);
+
+    $lticm_launch_url = $toolconfig->xpath('//blti:launch_url');
+    $lticm_tool_id = $toolconfig->xpath('//lticm:property[@name="tool_id"]');
+    $lticm_privacy_level = $toolconfig->xpath('//lticm:property[@name="privacy_level"]');
+
+    $form_setup['launch_url'] = $lticm_launch_url[0];
+    $form_setup['tool_id'] = $lticm_tool_id[0];
+    $form_setup['privacy_level'] = $lticm_privacy_level[0];
+}
+
+$pageurl = new moodle_url('/mod/lti/instructor_edit_tool_type.php');
+$form = new mod_lti_edit_types_form($pageurl, (object)$form_setup);
+
 if ($data = $form->get_data()) {
     $type = new stdClass();
 
