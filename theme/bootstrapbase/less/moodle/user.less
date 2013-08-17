@@ -17,6 +17,14 @@
     float: left;
     clear: none;
 }
+.dir-rtl {
+    .userprofile .description {
+        margin-right:0;
+    }
+    .user-box {
+        float:right;
+    }
+}
 .userlist .main .action-icon img {
     vertical-align: middle;
 }
@@ -156,9 +164,8 @@
     margin-right: auto;
 }
 /** Overide for RTL layout **/
-.dir-rtl .descriptionbox {
-    margin-right: 110px;
-    margin-left: 0;
+.dir-rtl .userprofilebox .descriptionbox {
+    margin: 0;
 }
 .dir-rtl .userlist table#participants td,
 .dir-rtl .userlist table#participants th {

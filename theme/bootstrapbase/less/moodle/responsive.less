@@ -16,6 +16,17 @@
     }
 }
 
+.dir-rtl {
+    .userprofile dl.list dt {
+        float:right;
+        text-align: left;
+        padding-left: 10px;
+    }
+    .userprofile dl.list dd {
+        margin-left:0;
+    }
+}
+
 @media (min-width: 980px) and (max-width: 1199px) {
     // Wider form labels.
     .form-item .form-label,
@@ -49,6 +60,11 @@
     .path-admin .buttons,
     .form-buttons {
         padding-left: @horizontalComponentOffset980;
+    }
+    .dir-rtl {
+        .userprofile dl.list dd {
+            margin-right: @horizontalComponentOffset980;
+        }
     }
 
 }
@@ -125,11 +141,18 @@
         .mform .fdescription.required,
         .userprofile dl.list dd,
         .form-horizontal .controls {
-            margin-right: @horizontalComponentOffset1200;
+            margin-right: @horizontalComponentOffset1200 - 100;
         }
         #page-mod-forum-search .c1 {
             margin-right: @horizontalComponentOffset1200;
         }
+        .form-item .form-label,
+        .mform .fitem div.fitemtitle,
+        .userprofile dl.list dt,
+        .form-horizontal .control-label {
+            width: @horizontalComponentOffset1200 - 120px;
+        }
+
     }
     .path-admin .buttons,
     .form-buttons {
