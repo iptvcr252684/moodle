@@ -762,6 +762,17 @@ class grade_grade extends grade_object {
         $this->finalgrade  = grade_floatval($this->finalgrade);
         $this->rawgrademin = grade_floatval($this->rawgrademin);
         $this->rawgrademax = grade_floatval($this->rawgrademax);
+
+        ////<grades_export event trigger
+        $grade_to_update = new stdClass();
+
+        $grade_to_update->courseid = $this->grade_item->courseid;
+        $grade_to_update->userid = $this->userid;
+        $grade_to_update->itemid = $this->grade_item->id;
+        $grade_to_update->finalgrade = $this->finalgrade;
+
+        events_trigger('grade_changed', $grade_to_update);
+
         return parent::update($source);
     }
 
