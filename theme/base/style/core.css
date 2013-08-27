@@ -620,6 +620,7 @@ body.tag .managelink {padding: 5px;}
 .userenrolment td {padding:0;height:41px;}
 .userenrolment .subfield {margin-right:5px;}
 .userenrolment .col_userdetails .subfield_picture {float:left;}
+.dir-rtl .userenrolment .col_userdetails .subfield_picture {float: right;}
 .userenrolment .col_lastseen {width:150px;}
 .userenrolment .col_role {width:262px;}
 .userenrolment .col_role .roles {margin-right:30px;}
