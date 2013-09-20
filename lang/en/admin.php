@@ -625,6 +625,7 @@ $string['languagesettings'] = 'Language settings';
 $string['latexpreamble'] = 'LaTeX preamble';
 $string['latexsettings'] = 'LaTeX renderer Settings';
 $string['latinexcelexport'] = 'Excel encoding';
+$string['exportencodingslist'] = 'UTF-8|Unicode (UTF-8),ISO-8859-1|Western European,ISO-8859-2|Eastern European,ISO-8859-4|Baltic,ISO-8859-5|Cyrillic,ISO-8859-6|Arabic,ISO-8859-7|Greek,ISO-8859-8|Hebrew,ISO-8859-9|Turkish';
 $string['legacyfilesinnewcourses'] = 'Legacy course files in new courses';
 $string['legacyfilesinnewcourses_help'] = 'By default legacy course files areas are available only in upgraded courses. Please note some features like single activity backup/restore are not compatible with this settings.';
 $string['licensesettings'] = 'Licence settings';

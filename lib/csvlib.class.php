@@ -438,11 +438,17 @@ class csv_export_writer {
      * @return string       csv data.
      */
     public function print_csv_data($return = false) {
+        global $CFG;
+
         fseek($this->fp, 0);
         $returnstring = '';
         while (($content = fgets($this->fp)) !== false) {
             if (!$return){
-                echo $content;
+                if ($CFG->latinexcelexport != 'UTF-8') {
+                    echo iconv("UTF-8", $CFG->latinexcelexport, $content);
+                } else {
+                    echo $content;
+                }
             } else {
                 $returnstring .= $content;
             }

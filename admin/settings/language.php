@@ -13,7 +13,15 @@ if ($hassiteconfig) {
     $temp->add(new admin_setting_configcheckbox('langcache', new lang_string('langcache', 'admin'), new lang_string('langcache_desc', 'admin'), 1));
     $temp->add(new admin_setting_configcheckbox('langstringcache', new lang_string('langstringcache', 'admin'), new lang_string('configlangstringcache', 'admin'), 1));
     $temp->add(new admin_setting_configtext('locale', new lang_string('localetext', 'admin'), new lang_string('configlocale', 'admin'), '', PARAM_FILE));
-    $temp->add(new admin_setting_configselect('latinexcelexport', new lang_string('latinexcelexport', 'admin'), new lang_string('configlatinexcelexport', 'admin'), '0', array('0'=>'Unicode','1'=>'Latin')));
+
+    // Read available list of encoding from language strings.
+    // (Which can be extended, if needed, by any Admin)
+    $tempexportencodings = explode(',', get_string('exportencodingslist', 'admin'));
+    foreach ($tempexportencodings as $exportencodingssets) {
+        list ($key,$value) = explode('|', $exportencodingssets);
+        $exportencodings[$key] = $value;
+    }
+    $temp->add(new admin_setting_configselect('latinexcelexport', new lang_string('latinexcelexport', 'admin'), new lang_string('configlatinexcelexport', 'admin'), '0', $exportencodings));
 
     $ADMIN->add('language', $temp);
 
