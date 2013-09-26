@@ -9,6 +9,7 @@
 .path-mod-survey .surveytable .whitecell {background-color:white;}
 
 .path-mod-survey #surveyform th {font-weight: normal;text-align: left;}
+.path-mod-survey.dir-rtl #surveyform th {text-align: right;}
 .path-mod-survey #surveyform th.hresponse {text-align: center;width: 9%;}
 
 #page-mod-survey-report .fullnamecell {width:10%;vertical-align:top;white-space: nowrap;}
