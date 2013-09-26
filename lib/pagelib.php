@@ -1868,7 +1868,10 @@ class moodle_page {
         if ($this->blockmanipulations && isset($this->blockmanipulations[$region])) {
             $regionwas = $region;
             $regionnow = $this->blockmanipulations[$region];
-            if ($this->blocks->is_known_region($regionwas) && $this->blocks->is_known_region($regionnow)) {
+            if ($this->blocks->is_known_region($regionwas)
+                && $this->blocks->is_known_region($regionnow)
+                && $this->blocks->get_blocks_for_region($regionwas)
+                && $this->blocks->get_blocks_for_region($regionnow) ) {
                 // Both the before and after regions are known so we can swap them over.
                 return $regionnow;
             }
