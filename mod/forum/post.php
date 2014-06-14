@@ -957,6 +957,9 @@ if ($edit) {
 $PAGE->set_title("$course->shortname: $strdiscussionname ".format_string($toppost->subject));
 $PAGE->set_heading($course->fullname);
 
+$PAGE->requires->js('/mod/forum/forum.js');
+$PAGE->requires->js_init_call('preventmulticlickonsubmit');
+
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($forum->name), 2);
 

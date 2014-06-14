@@ -57,3 +57,14 @@ function unlockoption(form,item) {
         form.elements['h'+item].value=0;
     }
 }
+
+function preventmulticlickonsubmit() {
+    // Submitting the Form disables the submit button.
+    var form = document.getElementById('mformforum');
+    var submitbutton = document.getElementById('id_submitbutton');
+    form.addEventListener("submit", function() {
+        if (form.getAttribute('submitted')) return false;
+        submitbutton.setAttribute('disabled', 'disabled');
+        form.setAttribute('submitted','true')
+    });
+}
