@@ -58,11 +58,11 @@ function unlockoption(form,item) {
     }
 }
 
-function preventmulticlickonsubmit() {
+function preventMultiClickOnSubmit() {
     // Submitting the Form disables the submit button.
-    var form = document.getElementById('mformforum');
-    var submitbutton = document.getElementById('id_submitbutton');
-    form.addEventListener("submit", function() {
+    var form = Y.one('#mformforum');
+    form.on("submit", function() {
+        var submitbutton = Y.one('#id_submitbutton');
         if (form.getAttribute('submitted')) return false;
         submitbutton.setAttribute('disabled', 'disabled');
         form.setAttribute('submitted','true')

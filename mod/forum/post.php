@@ -958,7 +958,7 @@ $PAGE->set_title("$course->shortname: $strdiscussionname ".format_string($toppos
 $PAGE->set_heading($course->fullname);
 
 $PAGE->requires->js('/mod/forum/forum.js');
-$PAGE->requires->js_init_call('preventmulticlickonsubmit');
+$PAGE->requires->js_init_call('preventMultiClickOnSubmit');
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($forum->name), 2);
