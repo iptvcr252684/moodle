@@ -63,7 +63,14 @@ class role_capabilities_updated extends base {
      * @return string
      */
     public function get_description() {
-        return "The user with id '$this->userid' updated the capabilities for the role with id '$this->objectid'.";
+        $changedcapabilities = '';
+        if (!empty($this->other['capabilities'])) {
+            foreach ($this->other['capabilities'] as $capability => $permission) {
+                $changedcapabilities .= "$capability = $permission, ";
+            }
+        }
+
+        return "The user with id '$this->userid' updated the capabilities: '{$changedcapabilities}' for the role with id '$this->objectid'.";
     }
 
     /**

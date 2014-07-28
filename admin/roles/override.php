@@ -139,6 +139,9 @@ if (optional_param('savechanges', false, PARAM_BOOL) && confirm_sesskey()) {
         array(
             'context' => $context,
             'objectid' => $roleid,
+            'other'    => array(
+                'capabilities' => $overridestable->list_changes(),
+            )
         )
     );
 

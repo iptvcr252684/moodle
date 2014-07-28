@@ -129,6 +129,31 @@ abstract class core_role_capability_table_with_risks extends core_role_capabilit
         $this->context->mark_dirty();
     }
 
+    /**
+     * List the new values of any permissions that have been changed.
+     */
+    public function list_changes() {
+        $list = array();
+        foreach ($this->changed as $changedcap) {
+            switch ($this->permissions[$changedcap]) {
+                case CAP_INHERIT:
+                    $list[$changedcap] = get_string('inherit', 'core_role');
+                    break;
+                case CAP_ALLOW:
+                    $list[$changedcap] = get_string('allow', 'core_role');
+                    break;
+                case CAP_PREVENT:
+                    $list[$changedcap] = get_string('prevent', 'core_role');
+                    break;
+                case CAP_PROHIBIT:
+                    $list[$changedcap] = get_string('prohibit', 'core_role');
+                    break;
+
+            }
+        }
+        return $list;
+    }
+
     public function display() {
         $this->load_parent_permissions();
         foreach ($this->capabilities as $cap) {
