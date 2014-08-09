@@ -62,6 +62,35 @@ class data_field_latlong extends data_field_base {
         $str .= '</table>';
         $str .= '</fieldset>';
         $str .= '</div>';
+        $strupdate = get_string("update");
+        $strlocation = get_string("location");
+        $str .= "<input type=\"button\" onclick=\"getLocation()\" value=\"{$strupdate} {$strlocation}\"></input>";
+        $str .= '<div id="mapholder"></div>';
+        $str .= '
+<script>
+    var lati = document.getElementById("field_'.$this->field->id.'_0");
+    var long = document.getElementById("field_'.$this->field->id.'_1");
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(updatePosition);
+        } else {
+            console.log("Geolocation is not supported by this browser.");
+        }
+    }
+    function updatePosition(position) {
+        lati.value = position.coords.latitude;
+        long.value = position.coords.longitude;
+
+        var latlon = position.coords.latitude+","+position.coords.longitude;
+
+        var img_url = "http://maps.googleapis.com/maps/api/staticmap?center="
+                        + latlon + "&zoom=14&size=400x300&sensor=false";
+
+        document.getElementById("mapholder").innerHTML = "<img src=\'" + img_url + "\'>";
+    }
+</script>';
+
         return $str;
     }
 
@@ -153,6 +182,7 @@ class data_field_latlong extends data_field_base {
                 $str = " <a href='"
                           . str_replace(array_keys($urlreplacements), array_values($urlreplacements), $this->linkoutservices[$servicesshown[0]])
                           ."' title='$servicesshown[0]'>$compasslat $compasslong</a>";
+                $str .= "<br><img src=\"http://maps.googleapis.com/maps/api/staticmap?center=$compasslat,$compasslong&zoom=14&size=400x300&sensor=false\">";
             } elseif (sizeof($servicesshown)>1) {
                 $str = '<form id="latlongfieldbrowse">';
                 $str .= "$compasslat, $compasslong\n";
