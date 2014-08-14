@@ -126,14 +126,16 @@ class MoodleQuickForm_date_time_selector extends MoodleQuickForm_group {
 
         $this->_elements = array();
         $dateformat = $calendartype->get_date_order($this->_options['startyear'], $this->_options['stopyear']);
+        if (right_to_left()) {   // Switch order of elements for Right-to-Left
+            $this->_elements[] = @MoodleQuickForm::createElement('select', 'minute', get_string('minute', 'form'), $minutes, $this->getAttributes(), true);
+            $this->_elements[] = @MoodleQuickForm::createElement('select', 'hour', get_string('hour', 'form'), $hours, $this->getAttributes(), true);
+            $dateformat = array_reverse($dateformat);
+        }
         foreach ($dateformat as $key => $date) {
             // E_STRICT creating elements without forms is nasty because it internally uses $this
             $this->_elements[] = @MoodleQuickForm::createElement('select', $key, get_string($key, 'form'), $date, $this->getAttributes(), true);
         }
-        if (right_to_left()) {   // Switch order of elements for Right-to-Left
-            $this->_elements[] = @MoodleQuickForm::createElement('select', 'minute', get_string('minute', 'form'), $minutes, $this->getAttributes(), true);
-            $this->_elements[] = @MoodleQuickForm::createElement('select', 'hour', get_string('hour', 'form'), $hours, $this->getAttributes(), true);
-        } else {
+        if (!right_to_left()) {   // Switch order of elements for Right-to-Left
             $this->_elements[] = @MoodleQuickForm::createElement('select', 'hour', get_string('hour', 'form'), $hours, $this->getAttributes(), true);
             $this->_elements[] = @MoodleQuickForm::createElement('select', 'minute', get_string('minute', 'form'), $minutes, $this->getAttributes(), true);
         }
