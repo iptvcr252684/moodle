@@ -176,6 +176,9 @@ abstract class qtype_multichoice_renderer_base extends qtype_with_combined_feedb
                 break;
             case 'none':
                 return '';
+            case 'locallang':
+                $number = get_string_manager()->get_list_label($num);
+                break;
             default:
                 return 'ERR';
         }

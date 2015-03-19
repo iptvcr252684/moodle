@@ -237,6 +237,8 @@ class qtype_multichoice extends question_type {
             $styles[$numberingoption] =
                     get_string('answernumbering' . $numberingoption, 'qtype_multichoice');
         }
+        $styles['locallang'] = get_string_manager()->get_list_label(1).'., '.
+                get_string_manager()->get_list_label(2).'., '.get_string_manager()->get_list_label(3).'., ...';
         return $styles;
     }
 

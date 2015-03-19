@@ -597,6 +597,21 @@ class core_string_manager_standard implements core_string_manager {
     }
 
     /**
+     * Returns localised list of labels.
+     *
+     * @param integer $index positive natural number between 1..n (n<count(items in 'localisedlistlables'))
+     * @return string localised index label name
+     */
+    public function get_list_label($index) {
+
+        $labels = explode(',', $this->get_string('localisedlistlables', 'langconfig'));
+        if (is_int($index) && $index > 0 && $index < count($labels)) {
+            return $labels[$index];
+        }
+        return '';
+    }
+
+    /**
      * Clears both in-memory and on-disk caches
      * @param bool $phpunitreset true means called from our PHPUnit integration test reset
      */
