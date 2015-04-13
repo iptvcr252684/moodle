@@ -1198,7 +1198,7 @@ class graph {
      *                  Otherwise, returns the string as is.
      */
     private function prepare_label_text($label) {
-        if (right_to_left() and !preg_match('/[0-9]/i', $label)) {
+        if (right_to_left() and !preg_match('/^[0-9]/i', $label)) {
             return core_text::strrev($label);
         } else {
             return $label;
