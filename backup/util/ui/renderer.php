@@ -339,6 +339,9 @@ class core_backup_renderer extends plugin_renderer_base {
                 $html .= html_writer::end_tag('fieldset');
             } else {
                 $html .= $selectacoursehtml;
+                // Set default action to: "Restore to current course".
+                $html .= $this->backup_detail_input(get_string('restoretoexistingcourseadding', 'backup'), 'radio', 'targetid',
+                    backup::TARGET_EXISTING_ADDING, array('checked' => 'checked'));
             }
             $html .= $this->backup_detail_pair('', html_writer::empty_tag('input', array('type' => 'submit', 'value' => get_string('continue'))));
             $html .= html_writer::end_tag('div');
