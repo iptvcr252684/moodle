@@ -1132,6 +1132,17 @@ x#fitem_id_availabilityconditionsjson input[type=text] {
 #page-enrol-users #filterform #fgroup_id_buttons {margin-left:0.5em;}
 #page-enrol-users .paging { clear: right; }
 
+#page-enrol-otherusers #filterform div,
+#page-enrol-otherusers #filterform fieldset {display:inline;float:none;clear:none;width:auto;margin:0;line-height:2;}
+#page-enrol-otherusers #filterform .fitem {white-space:nowrap;}
+#page-enrol-otherusers #filterform fieldset > div {display:block;float:left;background:#f2f2f2;padding:2px;}
+#page-enrol-otherusers #filterform select,
+#page-enrol-otherusers #filterform .ftext input {width:8em;}
+#page-enrol-otherusers #filterform #fitem_id_role,
+#page-enrol-otherusers #filterform #fitem_id_ifilter,
+#page-enrol-otherusers #filterform #fgroup_id_buttons {margin-left:0.5em;}
+#page-enrol-otherusers .paging { clear: right; }
+
 /**
 * Overide for RTL layout
 **/

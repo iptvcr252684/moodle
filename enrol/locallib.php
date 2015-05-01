@@ -193,6 +193,8 @@ class course_enrolment_manager {
         if ($this->totalotherusers === null) {
             list($ctxcondition, $params) = $DB->get_in_or_equal($this->context->get_parent_context_ids(true), SQL_PARAMS_NAMED, 'ctx');
             $params['courseid'] = $this->course->id;
+            list($filtersql, $moreparams) = $this->get_filter_sql();
+            $params += $moreparams;
             $sql = "SELECT COUNT(DISTINCT u.id)
                       FROM {role_assignments} ra
                       JOIN {user} u ON u.id = ra.userid
@@ -204,7 +206,8 @@ class course_enrolment_manager {
                             WHERE e.courseid = :courseid
                          ) ue ON ue.userid=u.id
                      WHERE ctx.id $ctxcondition AND
-                           ue.id IS NULL";
+                           ue.id IS NULL AND
+                           ($filtersql)";
             $this->totalotherusers = (int)$DB->count_records_sql($sql, $params);
         }
         return $this->totalotherusers;
@@ -329,6 +332,8 @@ class course_enrolment_manager {
             list($ctxcondition, $params) = $DB->get_in_or_equal($this->context->get_parent_context_ids(true), SQL_PARAMS_NAMED, 'ctx');
             $params['courseid'] = $this->course->id;
             $params['cid'] = $this->course->id;
+            list($filtersql, $moreparams) = $this->get_filter_sql();
+            $params += $moreparams;
             $sql = "SELECT ra.id as raid, ra.contextid, ra.component, ctx.contextlevel, ra.roleid, u.*, ue.lastseen
                     FROM {role_assignments} ra
                     JOIN {user} u ON u.id = ra.userid
@@ -341,7 +346,8 @@ class course_enrolment_manager {
                         WHERE e.courseid = :courseid
                        ) ue ON ue.userid=u.id
                    WHERE ctx.id $ctxcondition AND
-                         ue.id IS NULL
+                         ue.id IS NULL AND
+                         ($filtersql)
                 ORDER BY u.$sort $direction, ctx.depth DESC";
             $this->otherusers[$key] = $DB->get_records_sql($sql, $params, $page*$perpage, $perpage);
         }

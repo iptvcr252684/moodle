@@ -24,12 +24,17 @@
 
 require('../config.php');
 require_once("$CFG->dirroot/enrol/locallib.php");
+require_once("$CFG->dirroot/enrol/users_forms.php");
 require_once("$CFG->dirroot/enrol/renderer.php");
 require_once("$CFG->dirroot/group/lib.php");
 
 $id      = required_param('id', PARAM_INT); // course id
 $action  = optional_param('action', '', PARAM_ALPHANUMEXT);
 $filter  = optional_param('ifilter', 0, PARAM_INT);
+$search  = optional_param('search', '', PARAM_RAW);
+$role    = optional_param('role', 0, PARAM_INT);
+$fgroup  = optional_param('filtergroup', 0, PARAM_INT);
+$status  = optional_param('status', -1, PARAM_INT);
 
 $course = $DB->get_record('course', array('id'=>$id), '*', MUST_EXIST);
 $context = context_course::instance($course->id, MUST_EXIST);
@@ -43,7 +48,7 @@ if ($course->id == SITEID) {
 
 $PAGE->set_pagelayout('admin');
 
-$manager = new course_enrolment_manager($PAGE, $course, $filter);
+$manager = new course_enrolment_manager($PAGE, $course, $filter, $role, $search, $fgroup, $status);
 $table = new course_enrolment_other_users_table($manager, $PAGE);
 $PAGE->set_url('/enrol/otherusers.php', $manager->get_url_params()+$table->get_url_params());
 navigation_node::override_active_url(new moodle_url('/enrol/otherusers.php', array('id' => $id)));
@@ -72,6 +77,11 @@ if (!has_capability('moodle/course:viewhiddenuserfields', $context)) {
     }
 }
 
+$filterform = new enrol_users_filter_form('otherusers.php', array('manager' => $manager, 'id' => $id, 'newcourse' => $newcourse),
+    'get', '', array('id' => 'filterform'));
+$filterform->set_data(array('search' => $search, 'ifilter' => $filter, 'role' => $role,
+    'filtergroup' => $fgroup, 'status' => $status));
+
 $table->set_fields($fields, $OUTPUT);
 
 //$users = $manager->get_other_users($table->sort, $table->sortdirection, $table->page, $table->perpage);
@@ -92,5 +102,6 @@ $PAGE->set_title($course->fullname.': '.get_string('totalotherusers', 'enrol', $
 $PAGE->set_heading($PAGE->title);
 
 echo $OUTPUT->header();
+echo $filterform->render();
 echo $renderer->render($table);
 echo $OUTPUT->footer();
