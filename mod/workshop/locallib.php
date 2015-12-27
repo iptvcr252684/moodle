@@ -2861,6 +2861,15 @@ class workshop_user_plan implements renderable {
             $task->completed = 'info';
             $phase->tasks['setupinfo'] = $task;
         }
+        // Instruct teachers to click the bulb icon of the submission phase, to start it.
+        if ($workshop->phase == workshop::PHASE_SETUP) {
+            $task = new stdclass();
+            $task->title = get_string('continuetosubmissionphase', 'workshop');
+            $task->completed = 'info';
+            $task->link = $workshop->switchphase_url(workshop::PHASE_SUBMISSION);
+            $phase->tasks['setupinfo'] = $task;
+        }
+
         $this->phases[workshop::PHASE_SETUP] = $phase;
 
         //---------------------------------------------------------
