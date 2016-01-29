@@ -2048,11 +2048,26 @@ function blocks_delete_instance($instance, $nolongerused = false, $skipblockstab
     }
     context_helper::delete_instance(CONTEXT_BLOCK, $instance->id);
 
+    // Trigger a course deleted event.
+    $event = \core\event\block_deleted::create(array(
+        'objectid' => $instance->id,
+        'context' => context_block::instance($instance->id),
+        'other' => array(
+            'blockname' => $instance->blockname,
+            'instanceid' => $instance->id,
+        )
+    ));
+    $event->add_record_snapshot('block_instances', $instance);
+
     if (!$skipblockstables) {
         $DB->delete_records('block_positions', array('blockinstanceid' => $instance->id));
         $DB->delete_records('block_instances', array('id' => $instance->id));
         $DB->delete_records_list('user_preferences', 'name', array('block'.$instance->id.'hidden','docked_block_instance_'.$instance->id));
     }
+
+    // Trigger event if block was successfully removed.
+    $event->trigger();
+
 }
 
 /**
