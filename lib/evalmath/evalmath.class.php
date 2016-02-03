@@ -113,7 +113,7 @@ class EvalMath {
         'average'=>array(-1), 'max'=>array(-1),  'min'=>array(-1),
         'mod'=>array(2),      'pi'=>array(0),    'power'=>array(2),
         'round'=>array(1, 2), 'sum'=>array(-1), 'rand_int'=>array(2),
-        'rand_float'=>array(0));
+        'rand_float'=>array(0), 'last'=>array(-1));
 
     var $allowimplicitmultiplication;
 
@@ -532,6 +532,17 @@ class EvalMathFuncs {
         $res = 0;
         foreach($args as $a) {
            $res += $a;
+        }
+        return $res;
+    }
+
+    static function last() {
+        $args = func_get_args();
+        $res = 0;
+        foreach($args as $a) {
+            if (isset($a) && $a > 0) {
+                $res = $a;
+            }
         }
         return $res;
     }
