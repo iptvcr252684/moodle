@@ -2468,20 +2468,6 @@ dd:after {
     cursor: pointer;
 }
 
-span.inplaceeditable.inplaceeditingon {
-    position: relative;
-}
-span.inplaceeditable.inplaceeditingon span.editinstructions {
-    margin-top: -30px;
-    font-weight: normal;
-    margin-right: -300px;
-    margin-left: 0;
-}
-.dir-rtl span.inplaceeditable.inplaceeditingon span.editinstructions {
-    margin-left: -300px;
-    margin-right: 0;
-}
-
 .inplaceeditable {
 
     &.inplaceeditingon {
@@ -2525,11 +2511,23 @@ span.inplaceeditable.inplaceeditingon span.editinstructions {
     }
 }
 
-.dir-rtl .inplaceeditable {
-    &.inplaceeditingon {
-        .editinstructions {
-            margin-left: -300px;
-            margin-right: 0;
+.dir-rtl {
+    span.inplaceeditable {
+        &.inplaceeditingon {
+            span.editinstructions {
+                margin-right: 0;
+                margin-left: 0;
+                right:0;
+            }
+        }
+    }
+    .tag-management-table {
+        span.inplaceeditable {
+            &.inplaceeditingon {
+                span.editinstructions {
+                    width: 140%;
+                }
+            }
         }
     }
 }
