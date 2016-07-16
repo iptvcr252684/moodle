@@ -184,6 +184,27 @@ class navigation_node implements renderable {
             }
             if (array_key_exists('key', $properties)) {
                 $this->key = $properties['key'];
+                // Add a unique class based on 'key', if one was provided.
+                $prefix = 'key-';
+                if (is_numeric($this->key)) {
+                    switch ($this->type) {
+                        case self::TYPE_CATEGORY:
+                            $prefix = 'categoryid-';
+                            break;
+                        case self::TYPE_COURSE:
+                            $prefix = 'courseid-';
+                            break;
+                        case self::TYPE_SECTION:
+                            $prefix = 'section-';
+                            break;
+                        case self::TYPE_RESOURCE:
+                        case self::TYPE_ACTIVITY:
+                            $prefix = 'module-';
+                            break;
+
+                    }
+                }
+                $this->classes[] = $prefix.$properties['key'];
             }
             // This needs to happen last because of the check_if_active call that occurs
             if (array_key_exists('action', $properties)) {
