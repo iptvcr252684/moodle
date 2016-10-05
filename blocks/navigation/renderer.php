@@ -112,7 +112,7 @@ class block_navigation_renderer extends plugin_renderer_base {
                 continue;
             }
 
-            $nodetextid = 'label_' . $depth . '_' . $number;
+            $nodetextid = 'n_label_' . $depth . '_' . $number;
             $attributes = array('tabindex' => '-1', 'id' => $nodetextid);
             if ($title !== '') {
                 $attributes['title'] = $title;
@@ -165,6 +165,7 @@ class block_navigation_renderer extends plugin_renderer_base {
             if (isset($pattr['aria-expanded']) && $pattr['aria-expanded'] === 'false') {
                 $ulattr += ['aria-hidden' => 'true'];
             }
+            $ulattr += ['id' => $nodetextid];
 
             // Create the structure.
             $content = html_writer::tag('p', $content, $pattr);

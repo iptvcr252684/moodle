@@ -106,7 +106,7 @@ class block_settings_renderer extends plugin_renderer_base {
             if (!empty($item->classes) && count($item->classes) > 0) {
                 $pattr['class'] = array_merge($pattr['class'], $item->classes);
             }
-            $nodetextid = 'label_' . $depth . '_' . $number;
+            $nodetextid = 's_label_' . $depth . '_' . $number;
 
             // class attribute on the div item which only contains the item content
             $pattr['class'][] = 'tree_item';
@@ -122,6 +122,7 @@ class block_settings_renderer extends plugin_renderer_base {
             if (isset($pattr['aria-expanded']) && $pattr['aria-expanded'] === 'false') {
                 $ulattr += ['aria-hidden' => 'true'];
             }
+            $pattr += ['id' => $nodetextid];
 
             $content = html_writer::tag('p', $content, $pattr) . $this->navigation_node($item, $ulattr, $depth + 1);
             if (!empty($item->preceedwithhr) && $item->preceedwithhr===true) {
