@@ -107,9 +107,16 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
             } else {
                 $currentlang = $strlang;
             }
-            $this->language = $menu->add($currentlang, new moodle_url(''), $strlang, 10000);
+            $currentlanguage = current_language();
+            $this->language = $menu->add($currentlang, new moodle_url(''), get_string('language'), 10000,
+                array('data-lang' => $currentlanguage));
             foreach ($langs as $langtype => $langname) {
-                $this->language->add($langname, new moodle_url($this->page->url, array('lang' => $langtype)), $langname);
+                $dataattributes = array('data-lang' => $langtype);
+                if ($langtype == $currentlanguage) {
+                    $dataattributes['data-current-lang'] = true;
+                }
+                $this->language->add($langname, new moodle_url($this->page->url, array('lang' => $langtype)), $langname
+                    , null, $dataattributes);
             }
         }
 
@@ -172,7 +179,8 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
                 } else {
                     $url = '#';
                 }
-                $content .= html_writer::link($url, $menunode->get_text(), array('title' => $menunode->get_title()));
+                $content .= html_writer::link($url, $menunode->get_text(), array_merge(array('title' => $menunode->get_title()),
+                    $menunode->get_attributes()));
                 $content .= '</li>';
             }
         }

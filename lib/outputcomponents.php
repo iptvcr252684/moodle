@@ -3119,6 +3119,11 @@ class custom_menu_item implements renderable, templatable {
     protected $title;
 
     /**
+     * @var array $attributes element attributes. [Optional]
+     */
+    protected $attributes = array();
+
+    /**
      * @var int A sort order for the item, not necessary if you order things in
      * the CFG var.
      */
@@ -3149,11 +3154,14 @@ class custom_menu_item implements renderable, templatable {
      * @param int $sort A sort or to use if we need to sort differently [Optional]
      * @param custom_menu_item $parent A reference to the parent custom_menu_item this child
      *        belongs to, only if the child has a parent. [Optional]
+     * @param array $attributes element attributes. [Optional]
      */
-    public function __construct($text, moodle_url $url=null, $title=null, $sort = null, custom_menu_item $parent = null) {
+    public function __construct($text, moodle_url $url = null, $title = null, $sort = null,
+                                custom_menu_item $parent = null, array $attributes = array()) {
         $this->text = $text;
         $this->url = $url;
         $this->title = $title;
+        $this->attributes = $attributes;
         $this->sort = (int)$sort;
         $this->parent = $parent;
     }
@@ -3165,14 +3173,18 @@ class custom_menu_item implements renderable, templatable {
      * @param moodle_url $url
      * @param string $title
      * @param int $sort
+     * @param array $attributes element attributes. [Optional]
      * @return custom_menu_item
      */
-    public function add($text, moodle_url $url = null, $title = null, $sort = null) {
+    public function add($text, moodle_url $url = null, $title = null, $sort = null, array $attributes = array()) {
         $key = count($this->children);
         if (empty($sort)) {
             $sort = $this->lastsort + 1;
         }
-        $this->children[$key] = new custom_menu_item($text, $url, $title, $sort, $this);
+        if (!empty($attributes)) {
+            $this->attributes = array_merge($this->attributes, $attributes);
+        }
+        $this->children[$key] = new custom_menu_item($text, $url, $title, $sort, $this, $attributes);
         $this->lastsort = (int)$sort;
         return $this->children[$key];
     }
@@ -3223,6 +3235,14 @@ class custom_menu_item implements renderable, templatable {
      */
     public function get_title() {
         return $this->title;
+    }
+
+    /**
+     * Returns the element's attributes array for this item
+     * @return string
+     */
+    public function get_attributes() {
+        return $this->attributes;
     }
 
     /**
@@ -3279,6 +3299,14 @@ class custom_menu_item implements renderable, templatable {
      */
     public function set_title($title) {
         $this->title = (string)$title;
+    }
+
+    /**
+     * Sets or add (merge) one or more HTML element attribute(s) for the node
+     * @param array $attributes
+     */
+    public function set_attribute($attributes) {
+        $this->attributes = array_merge($this->attributes, $attributes);
     }
 
     /**
