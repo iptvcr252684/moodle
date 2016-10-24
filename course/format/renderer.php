@@ -224,6 +224,10 @@ abstract class format_section_renderer_base extends plugin_renderer_base {
             $classes = '';
         }
         $sectionname = html_writer::tag('span', $this->section_title($section, $course));
+        // Make sure teachers see (read) that a section is hidden for the students.
+        if (!$section->visible) {
+            $sectionname .= ' - '.get_string('hidden', 'grades') . ' ' . get_string('forstudents', 'grades');
+        }
         $o.= $this->output->heading($sectionname, 3, 'sectionname' . $classes);
 
         $o.= html_writer::start_tag('div', array('class' => 'summary'));
