@@ -5374,7 +5374,7 @@ function forum_print_latest_discussions($course, $forum, $maxdiscussions = -1, $
                 $buttonadd = get_string('addanewdiscussion', 'forum');
                 break;
         }
-        $button = new single_button(new moodle_url('/mod/forum/post.php', ['forum' => $forum->id]), $buttonadd, 'get');
+        $button = new single_button(new moodle_url('/mod/forum/post.php', ['forum' => $forum->id]), $buttonadd, 'get', true);
         $button->class = 'singlebutton forumaddnew';
         $button->formid = 'newdiscussionform';
         echo $OUTPUT->render($button);
