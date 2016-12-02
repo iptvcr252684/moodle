@@ -694,10 +694,18 @@ a.ygtvspacer:hover {
 .filemanager .fp-filename-icon.fp-isreference .fp-reficons2 {
     background: url('[[pix:theme|fp/alias_sm]]') no-repeat 0 0;
     height: 100%;
+    /*rtl:remove*/
     width: 100%;
+    /*rtl:raw:
+    width: 24px;
+    */
     position: absolute;
     top: 9px;
+    /*rtl:remove*/
     left: -6px;
+    /*rtl:raw:
+    right: 0;
+    */
     z-index: 1001;
 }
 // Folder Context Menu (File Manager only)
