@@ -23,10 +23,12 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot. '/mod/assign/feedback/editpdf/settingslib.php');
+require_once($CFG->libdir. '/pdflib.php');
 
 // Stamp files setting.
 $name = 'assignfeedback_editpdf/stamps';
-$title = get_string('stamps','assignfeedback_editpdf');
+$title = get_string('stamps', 'assignfeedback_editpdf');
 $description = get_string('stampsdesc', 'assignfeedback_editpdf');
 
 $setting = new admin_setting_configstoredfile($name, $title, $description, 'stamps', 0,
@@ -52,3 +54,9 @@ $settings->add(new admin_setting_heading('pathtounoconv', get_string('pathtounoc
 $url = new moodle_url('/mod/assign/feedback/editpdf/testunoconv.php');
 $link = html_writer::link($url, get_string('test_unoconv', 'assignfeedback_editpdf'));
 $settings->add(new admin_setting_heading('test_unoconv', '', $link));
+
+$settings->add(new assignfeedback_editpdf_admin_setting_configselect('assignfeedback_editpdf/editfont',
+    get_string('fontname', 'assignfeedback_editpdf'),
+    get_string('fontname_help', 'assignfeedback_editpdf', K_PATH_FONTS),
+    PDF_DEFAULT_FONT,
+    null));
