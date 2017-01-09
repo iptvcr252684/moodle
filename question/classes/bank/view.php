@@ -470,6 +470,14 @@ class view {
         $editcontexts = $this->contexts->having_one_edit_tab_cap($tabname);
         // Category selection form.
         echo $OUTPUT->heading(get_string('questionbank', 'question'), 2);
+
+        // What questions am I allowed to view in this category.
+        list($questioncatid, $questioncatcontextid) = explode(',', $cat);
+        $categorycontext = \context::instance_by_id($questioncatcontextid);
+        if (!has_capability('moodle/question:viewall', $categorycontext)
+            && has_capability('moodle/question:viewmine', $categorycontext)) {
+            array_unshift($this->searchconditions, new \core_question\bank\search\viewown_condition());
+        }
         array_unshift($this->searchconditions, new \core_question\bank\search\hidden_condition(!$showhidden));
         array_unshift($this->searchconditions, new \core_question\bank\search\category_condition(
                 $cat, $recurse, $editcontexts, $this->baseurl, $this->course));
@@ -749,9 +757,10 @@ class view {
         $caneditall = has_capability('moodle/question:editall', $catcontext);
         $canuseall = has_capability('moodle/question:useall', $catcontext);
         $canmoveall = has_capability('moodle/question:moveall', $catcontext);
+        $canmmovemine = has_capability('moodle/question:movemine', $catcontext);
 
         echo '<div class="modulespecificbuttonscontainer">';
-        if ($caneditall || $canmoveall || $canuseall) {
+        if ($caneditall || $canmoveall || $canuseall || $canmmovemine) {
             echo '<strong>&nbsp;'.get_string('withselected', 'question').':</strong><br />';
 
             // Print delete and move selected question.
@@ -759,7 +768,7 @@ class view {
                 echo '<input type="submit" class="btn btn-secondary" name="deleteselected" value="' . get_string('delete') . "\" />\n";
             }
 
-            if ($canmoveall && count($addcontexts)) {
+            if (($canmoveall || $canmmovemine ) && count($addcontexts)) {
                 echo '<input type="submit" class="btn btn-secondary" name="move" value="' . get_string('moveto', 'question') . "\" />\n";
                 question_category_select_menu($addcontexts, false, 0, "{$category->id},{$category->contextid}");
             }
