@@ -872,6 +872,9 @@ if ($totalcount > $perpage) {
 
 echo '</div>';  // Userlist.
 
+echo $OUTPUT->download_dataformat_selector(get_string('userbulkdownload', 'admin'),
+            'download_participants.php', 'dataformat', array('courseid' => $course->id, 'roleid' => $roleid));
+
 echo $OUTPUT->footer();
 
 if ($userlist) {
