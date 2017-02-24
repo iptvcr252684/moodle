@@ -159,9 +159,10 @@ class custom_view extends \core_question\bank\view {
         $cmoptions->hasattempts = !empty($this->quizhasattempts);
 
         $canuseall = has_capability('moodle/question:useall', $catcontext);
+        $canusemine = has_capability('moodle/question:usemine', $catcontext);
 
         echo '<div class="modulespecificbuttonscontainer">';
-        if ($canuseall) {
+        if ($canuseall || $canusemine) {
 
             // Add selected questions to the quiz.
             $params = array(

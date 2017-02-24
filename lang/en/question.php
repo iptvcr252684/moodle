@@ -409,6 +409,7 @@ $string['showquestiontext'] = 'Show question text in the question list';
 $string['shown'] = 'Shown';
 $string['shownumpartscorrect'] = 'Show the number of correct responses';
 $string['shownumpartscorrectwhenfinished'] = 'Show the number of correct responses once the question has finished';
+$string['showownquestions'] = 'In this category you can only see the questions you created';
 $string['specificfeedback'] = 'Specific feedback';
 $string['specificfeedback_help'] = 'Feedback that depends on what response the student gave.';
 $string['started'] = 'Started';
