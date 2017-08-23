@@ -755,6 +755,7 @@ class edit_renderer extends \plugin_renderer_base {
         $questionicons .= $this->question_preview_icon($structure->get_quiz(), $structure->get_question_in_slot($slot));
         if ($structure->can_be_edited()) {
             $questionicons .= $this->question_remove_icon($structure, $slot, $pageurl);
+            $questionicons .= $this->question_duplicate_icon($structure, $slot, $pageurl);
         }
         $questionicons .= $this->marked_out_of_field($structure, $slot);
         $output .= html_writer::span($questionicons, 'actions'); // Required to add js spinner icon.
@@ -840,6 +841,34 @@ class edit_renderer extends \plugin_renderer_base {
 
         return $this->action_link($url, $image, null, array('title' => $strdelete,
                     'class' => 'cm-edit-action editing_delete', 'data-action' => 'delete'));
+    }
+
+    /**
+     * Render the duplicate icon.
+     *
+     * @param structure $structure object containing the structure of the quiz.
+     * @param int $slot the first slot on the page we are outputting.
+     * @param \moodle_url $pageurl the canonical URL of the edit page.
+     * @return string HTML to output.
+     */
+    public function question_duplicate_icon(structure $structure, $slot, $pageurl) {
+        $qid = 0;
+        foreach ($structure->get_slots() as $slotitems) {
+            if ($slotitems->slot == $slot) {
+                $qid = $slotitems->questionid;
+                // exit
+            }
+        }
+        $returnurl = new \moodle_url('/mod/quiz/edit.php', $pageurl->params());
+        $url = new \moodle_url('/question/question.php',
+            array('sesskey' => sesskey(), 'makecopy' => 1, 'cmid' => $pageurl->get_param('cmid')
+            , 'id' => $qid, 'returnurl' => $returnurl->out_as_local_url()));
+        $strduplicate = get_string('duplicate');
+
+        $image = $this->pix_icon('t/copy', $strduplicate);
+
+        return $this->action_link($url, $image, null, array('title' => $strduplicate,
+            'class' => 'cm-edit-action editing_duplicate', 'data-action' => 'duplicate'));
     }
 
     /**
