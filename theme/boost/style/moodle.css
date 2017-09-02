@@ -18121,7 +18121,11 @@ table caption {
  */
 html,
 body {
-  height: 100%; }
+  height: 100%;
+  overflow-y: auto; }
+
+#page-grade-report-grader-index {
+  overflow-y: unset; }
 
 #page-wrapper {
   height: 100%;
