@@ -598,9 +598,14 @@ function update_moduleinfo($cm, $moduleinfo, $course, $mform = null) {
         }
     }
 
-    // Make sure visibility is set correctly (in particular in calendar).
     if (has_capability('moodle/course:activityvisibility', $modcontext)) {
-        set_coursemodule_visible($moduleinfo->coursemodule, $moduleinfo->visible, $moduleinfo->visibleoncoursepage);
+        // Make sure visibility is set correctly (in particular in calendar).
+        if (isset($moduleinfo->visibleoncoursepage)) {
+            set_coursemodule_visible($moduleinfo->coursemodule, $moduleinfo->visible, $moduleinfo->visibleoncoursepage);
+        } else {
+            // Assuming default visibleoncoursepage == 1, is a good choice.
+            set_coursemodule_visible($moduleinfo->coursemodule, $moduleinfo->visible);
+        }
     }
 
     if (isset($moduleinfo->cmidnumber)) { // Label.
