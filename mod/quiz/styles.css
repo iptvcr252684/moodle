@@ -24,6 +24,10 @@
     float: right;
 }
 
+#page-mod-quiz-review .submitbtns .mod_quiz-finishreview:first-child {
+    float: left;
+}
+
 .path-mod-quiz .mod_quiz-redo_question_button {
     margin: 0;
 }

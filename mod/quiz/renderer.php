@@ -239,11 +239,11 @@ class mod_quiz_renderer extends plugin_renderer_base {
             return html_writer::empty_tag('input', array('type' => 'button',
                     'value' => get_string('finishreview', 'quiz'),
                     'id' => 'secureclosebutton',
-                    'class' => 'mod_quiz-next-nav btn btn-primary'));
+                    'class' => 'mod_quiz-next-nav mod_quiz-finishreview btn btn-primary'));
 
         } else {
             return html_writer::link($url, get_string('finishreview', 'quiz'),
-                    array('class' => 'mod_quiz-next-nav'));
+                    array('class' => 'mod_quiz-next-nav mod_quiz-finishreview'));
         }
     }
 
