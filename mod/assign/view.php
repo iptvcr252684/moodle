@@ -29,11 +29,12 @@ $id = required_param('id', PARAM_INT);
 
 list ($course, $cm) = get_course_and_cm_from_cmid($id, 'assign');
 
-require_login($course, true, $cm);
+//require_login($course, true, $cm);
 
 $context = context_module::instance($cm->id);
 
-require_capability('mod/assign:view', $context);
+
+//require_capability('mod/assign:view', $context);
 
 $assign = new assign($context, $cm, $course);
 $urlparams = array('id' => $id,
