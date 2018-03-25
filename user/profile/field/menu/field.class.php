@@ -61,7 +61,13 @@ class profile_field_menu extends profile_field_base {
         }
         foreach ($options as $key => $option) {
             // Multilang formatting with filters.
-            $this->options[$option] = format_string($option, true, ['context' => context_system::instance()]);
+            if (mb_strrpos($option, '|')) {
+                list($optiondata, $optionkey) = explode("|", $option);
+            } else {
+                $optionkey = $key;
+                $optiondata = $option;
+            }
+            $this->options[$optionkey] = format_string($optiondata, true, ['context' => context_system::instance()]);
         }
 
         // Set the data key.
@@ -167,6 +173,30 @@ class profile_field_menu extends profile_field_base {
      */
     public function get_field_properties() {
         return array(PARAM_TEXT, NULL_NOT_ALLOWED);
+    }
+
+    /**
+     * Display the data for this field
+     * @return string
+     */
+    public function display_data() {
+        $options = new stdClass();
+        $options->para = false;
+        // Param 1 for menu type is the options.
+        if (isset($this->field->param1)) {
+            $options = explode("\n", $this->field->param1);
+        }
+        foreach ($options as $key => $option) {
+            // Multilang formatting with filters.
+            if (mb_strrpos($option, '|')) {
+                list($optiondata, $optionkey) = explode("|", $option);
+            } else {
+                $optionkey = $key;
+                $optiondata = $option;
+            }
+            $this->options[$optionkey] = format_string($optiondata, true, ['context' => context_system::instance()]);
+        }
+        return format_text($this->options[$this->data], FORMAT_MOODLE, $options);
     }
 }
 
