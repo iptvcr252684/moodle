@@ -284,6 +284,37 @@ if ($mform->is_cancelled()) {
                 context_course::instance($fromform->courseid), $fromform->coursetags, 0);
     }
 
+    // Saving competencies
+    if (get_config('core_competency', 'enabled')
+        && isset($fromform->competency_rule) && isset($fromform->competencies)) {
+        // We bypass the API here and go direct to the persistent layer - because we don't want to do permission
+        // checks here - we need to load the real list of existing course module competencies.
+        $existing = \core_competency\question_competency::list_question_competencies($question->id);
+
+        $existingids = array();
+        foreach ($existing as $cmc) {
+            $existingids[] = $cmc->get('competencyid');
+        }
+
+        $newids = isset($fromform->competencies) ? $fromform->competencies : array();
+
+        $removed = array_diff($existingids, $newids);
+        $added = array_diff($newids, $existingids);
+
+        foreach ($removed as $removedid) {
+            \core_competency\api::remove_competency_from_question($question->id, $removedid);
+        }
+        foreach ($added as $addedid) {
+            \core_competency\api::add_competency_to_question($question->id, $addedid);
+        }
+
+        // Now update the rules for each course_module_competency.
+        $current = \core_competency\api::list_question_competencies_in_question($question->id);
+        foreach ($current as $questioncompetency) {
+            \core_competency\api::set_question_competency_ruleoutcome($questioncompetency, $fromform->competency_rule);
+        }
+    }
+
     // Purge this question from the cache.
     question_bank::notify_question_edited($question->id);
 
