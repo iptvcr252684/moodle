@@ -79,7 +79,8 @@ class editstep extends \moodleform {
         $mform->setType('title', PARAM_TEXT);
         $mform->addHelpButton('title', 'title', 'tool_usertours');
 
-        $mform->addElement('textarea', 'content', get_string('content', 'tool_usertours'));
+        $editoroptions = ['trusttext' => true];
+        $mform->addElement('editor', 'content', get_string('content', 'tool_usertours'), null, $editoroptions);
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
         $mform->setType('content', PARAM_RAW);
         $mform->addHelpButton('content', 'content', 'tool_usertours');
