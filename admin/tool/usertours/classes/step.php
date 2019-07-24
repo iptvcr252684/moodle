@@ -613,6 +613,9 @@ class step {
             $this->get_target()->prepare_data_for_form($data);
         }
 
+        // Prepare content for editing in a form 'editor' field type.
+        $data->content = ['text' => $data->content];
+
         return $data;
     }
 
@@ -625,7 +628,7 @@ class step {
      */
     public function handle_form_submission(local\forms\editstep &$mform, \stdClass $data) {
         $this->set_title($data->title);
-        $this->set_content($data->content);
+        $this->set_content($data->content['text']);
         $this->set_targettype($data->targettype);
 
         $this->set_targetvalue($this->get_target()->get_value_from_form($data));
