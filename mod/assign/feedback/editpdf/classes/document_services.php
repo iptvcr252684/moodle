@@ -210,8 +210,11 @@ EOD;
                                 }
                             }
                         }
+                        list($filename, $abouttoconvertfileext) = explode('.', $file->get_filename());
                         // The file has not been converted to PDF, try to convert it to PDF.
                         if (!isset($files[$filename])
+                            // Do not convert what you can not.
+                            && $converter->can_convert_format_to($abouttoconvertfileext, 'pdf')
                             && $convertedfile = $converter->start_conversion($file, 'pdf')) {
                             $files[$filename] = $convertedfile;
                         }
