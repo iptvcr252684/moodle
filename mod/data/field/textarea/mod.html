@@ -43,6 +43,29 @@
         </td>
     </tr>
     <tr>
+        <td class="c0"><label for="param4"><?php echo get_string('formattexttype'); ?></label></td>
+        <td class="c1">
+            <?php
+
+                $editor = editors_get_preferred_editor(FORMAT_PLAIN);
+                $strformats = format_text_menu();
+                $formats =  $editor->get_supported_formats();
+                foreach ($formats as $fid) {
+                    $formats[$fid] = $strformats[$fid];
+                }
+            ?>
+            <select class="textareaformat" name="param4" id="param4" size="1">
+                <?php
+
+                    foreach ($formats as $key=>$desc) {
+                    $selected = ($this->field->param4 == $key) ? 'selected="selected"' : '';
+                    echo '<option value="'.s($key).'" '.$selected.'>'.$desc.'</option>';
+                }
+                ?>
+            </select>
+        </td>
+    </tr>
+    <tr>
         <td class="c0"><label for="param5"><?php echo get_string('maxbytes', 'datafield_textarea'); ?></label></td>
         <td class="c1">
             <input class="c1" type="text" name="param5" id="param5"
@@ -51,4 +74,3 @@
         </td>
     </tr>
 </table>
-<input type="hidden" name="param4" id="param4" value="<?php echo FORMAT_HTML; ?>" />
