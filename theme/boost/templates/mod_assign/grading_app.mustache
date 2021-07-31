@@ -1,0 +1,152 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_assign/grading_app
+
+    Actions panel at the bottom of the assignment grading UI.
+
+    Classes required for JS:
+    * Uses some bootstrap classes, but for visual appeal only.
+
+    Data attributes required for JS:
+    * data-region, data-first-userid, data-courseid, data-contextid, data-assignmentid
+
+    Context variables required for this template:
+    * see mod/assign/classes/output/grading_app.php
+
+    This template includes ajax functionality, so it cannot be shown in the template library.
+}}
+<div data-region="grading-navigation-panel" data-first-userid="{{userid}}" data-courseid="{{courseid}}"
+    data-showuseridentity="{{showuseridentity}}">
+    {{> mod_assign/grading_navigation }}
+</div>
+
+<div class="splitarea" dir="{{dir}}">
+    {{#showreview}}
+    <div data-region="review-panel" id="review-panel" class="split split-horizontal">
+        <a href="#" data-region="review-panel-toggle">
+            <div class="collapse-icon">{{#pix}} t/expanded, core, {{#str}} collapsereviewpanel, mod_assign {{/str}}
+                {{/pix}}</div>
+            <div class="expand-icon">
+                <div class="ltr-icon">{{#pix}} t/collapsed, core, {{#str}} expandreviewpanel, mod_assign {{/str}}
+                    {{/pix}}</div>
+                <div class="rtl-icon">{{#pix}} t/collapsed_rtl, core, {{#str}} expandreviewpanel, mod_assign {{/str}}
+                    {{/pix}}</div>
+                <div class="toggle-text">{{#str}} clickexpandreviewpanel, mod_assign {{/str}}</div>
+            </div>
+        </a>
+        <div data-region="review-panel-content">
+            <div data-region="review">
+                {{> mod_assign/review_panel }}
+            </div>
+        </div>
+    </div>
+    {{/showreview}}
+    <div data-region="grade-panel" id="grade-panel" class="split split-horizontal" {{^showreview}}class="fullwidth"
+        {{/showreview}}>
+        <div data-region="grade" data-contextid="{{contextid}}" data-assignmentid="{{assignmentid}}">
+            {{> mod_assign/grading_panel }}
+        </div>
+    </div>
+</div>
+
+<div data-region="grade-actions-panel">
+    <div data-region="grade-actions">
+        {{> mod_assign/grading_actions }}
+    </div>
+</div>
+<div data-region="overlay" class="moodle-has-zindex">
+    {{> mod_assign/grading_save_in_progress }}
+</div>
+{{#showreview}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.2/split.min.js"></script>
+{{#js}}
+Split(['#grade-panel', '#review-panel'], {
+    sizes: [30, 70],
+    cursor: 'col-resize',
+    direction: 'horizontal',
+})
+{{/js}}
+{{/showreview}}
+
+<style>
+    .splitarea {
+        display: flex;
+        height: calc(100vh - 150px);
+        {{flexdirection}}
+    }
+
+    #review-panel {
+        order: {{order1}};
+        position: relative !important;
+        right: auto !important;
+        left: auto !important;
+        height: auto;
+    }
+
+    #grade-panel {
+        order: {{order3}};
+        position: relative !important;
+        right: auto !important;
+        left: auto !important;
+        height: auto;
+
+    }
+
+    .path-mod-assign [data-region="review-panel"] {
+        position: relative !important;
+    }
+
+    .split {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .content {
+        border: 1px solid #C0C0C0;
+        box-shadow: inset 0 1px 2px #e4e4e4;
+        background-color: #fff;
+    }
+
+    .gutter.gutter-horizontal {
+        cursor: col-resize;
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+        order: 2;
+        position: relative;
+    }
+
+    .gutter {
+        background-color: transparent;
+        background-repeat: no-repeat;
+        background-position: 50%;
+        background-color: bisque;
+        height: 5%;
+        margin-top: 50vh;
+    }
+
+    .path-mod-assign [data-region="grade-panel"] {
+        right: auto !important;
+    }
+
+    /* PTL-2452 mod/qassign - pdf editor - hide redundant panel preset buttons */
+    .path-mod-assign [data-region='grade-actions-panel'] [data-region='grade-actions'] .collapse-buttons {
+        display: none;
+    }
+</style>

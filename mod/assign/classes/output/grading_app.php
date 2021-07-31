@@ -173,6 +173,19 @@ class grading_app implements templatable, renderable {
         $export->currentuserid = $USER->id;
         $helpicon = new \help_icon('sendstudentnotifications', 'assign');
         $export->helpicon = $helpicon->export_for_template($output);
+
+        if (right_to_left()) {
+            $export->dir = 'rtl';
+            $export->order1 = '1';
+            $export->order3 = '3';
+            $export->flexdirection = 'flex-direction: row-reverse;';
+        } else {
+            $export->dir = 'ltr';
+            $export->order1 = '3';
+            $export->order3 = '1';
+            $export->flexdirection = '';
+        }
+
         return $export;
     }
 
