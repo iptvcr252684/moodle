@@ -60,3 +60,12 @@
     padding-top: 5px;
 }
 /*rtl:end:ignore*/
+
+/*rtl:raw:
+#page-report-progress-index .rotated-text {
+    display: block;
+    height: 15rem;
+    transform: translate(50%,100%) rotate(90deg);
+    transform-origin: 100% 0;
+}
+ */
