@@ -78,11 +78,19 @@ class progress {
 
         // Get the number of modules that have been completed.
         $completed = 0;
+        // Count only visible modules.
+        $count_visible_modules = 0;
         foreach ($modules as $module) {
-            $data = $completion->get_data($module, true, $userid);
-            $completed += $data->completionstate == COMPLETION_INCOMPLETE ? 0 : 1;
+            if($module->visible == 1) {
+                $data = $completion->get_data($module, true, $userid);
+                $completed += $data->completionstate == COMPLETION_INCOMPLETE ? 0 : 1;
+                $count_visible_modules++;
+            }
         }
 
-        return ($completed / $count) * 100;
+        // No visible modules found.
+        if ($count_visible_modules === 0) {return 0;}
+
+        return ($completed / $count_visible_modules) * 100;
     }
 }
